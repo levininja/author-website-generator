@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Author Site — Author Website Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>Author Website Generator</h1>
+    <a href="/logout" class="logout-link">Log out</a>
+  </header>
+
+  <main class="form-container">
+
+    <!-- Status banner — shown/hidden by onboard.js -->
+    <div id="status-message" class="status hidden" role="alert"></div>
+
+    <!--
+      novalidate: we handle validation in JS so we can control the UX.
+      enctype: required because the form accepts file uploads.
+    -->
+    <form id="onboard-form" enctype="multipart/form-data" novalidate>
+
+      <!-- ── Client Identity ─────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Client Identity</h2>
+
+        <div class="form-group">
+          <label for="author_name">Author Name <span class="required">*</span></label>
+          <input type="text" id="author_name" name="author_name"
+                 required placeholder="Jane Doe">
+        </div>
+
+        <div class="form-group">
+          <label for="author_email">Author Email <span class="required">*</span></label>
+          <input type="email" id="author_email" name="author_email"
+                 required placeholder="jane@janedoeauthor.com">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wp_username">WordPress Admin Username <span class="required">*</span></label>
+            <input type="text" id="wp_username" name="wp_username"
+                   required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="wp_password">WordPress Admin Password <span class="required">*</span></label>
+            <input type="password" id="wp_password" name="wp_password"
+                   required autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Site Identity ───────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Site Identity</h2>
+
+        <div class="form-group">
+          <label for="site_domain">Site Domain <span class="required">*</span></label>
+          <input type="text" id="site_domain" name="site_domain"
+                 required placeholder="janedoeauthor.com">
+        </div>
+
+        <div class="form-group">
+          <label for="site_tagline">Site Tagline / Author One-Liner</label>
+          <input type="text" id="site_tagline" name="site_tagline"
+                 placeholder="Bestselling author of heart-pounding thrillers">
+        </div>
+
+        <div class="form-group">
+          <label for="author_bio_short">
+            Author Short Bio
+            <span class="hint">— shown in About section</span>
+          </label>
+          <textarea id="author_bio_short" name="author_bio_short" rows="3"
+                    placeholder="A paragraph for the homepage About section..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="author_bio_long">
+            Author Long Bio
+            <span class="hint">— optional, for full About page</span>
+          </label>
+          <textarea id="author_bio_long" name="author_bio_long" rows="6"
+                    placeholder="Extended bio for the full About page (optional)..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="author_headshot">Author Headshot</label>
+          <input type="file" id="author_headshot" name="author_headshot" accept="image/*">
+          <span class="field-hint">JPG, PNG, or WebP recommended.</span>
+        </div>
+      </div>
+
+      <!-- ── Genre & Branding ────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Genre &amp; Branding</h2>
+
+        <div class="form-group">
+          <label>Genre(s)</label>
+          <!--
+            Tag UI: genre-input captures keypresses; onboard.js manages the tags
+            array and writes the comma-separated result into genre-values.
+          -->
+          <div class="tag-container" id="genre-container">
+            <input type="text" id="genre-input" class="tag-input"
+                   placeholder="Type a genre and press Enter">
+          </div>
+          <input type="hidden" id="genre-values" name="genres">
+          <span class="field-hint">Press Enter or comma to add each genre. Backspace removes the last tag.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="primary_color">Primary Brand Color</label>
+            <div class="color-input-group">
+              <!-- Only the color picker has name= so only it is submitted -->
+              <input type="color" id="primary_color" name="primary_color" value="#2563eb">
+              <input type="text" id="primary_color_hex" class="color-hex-input"
+                     value="#2563eb" maxlength="7" placeholder="#2563eb"
+                     aria-label="Primary color hex value">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="secondary_color">Secondary Brand Color</label>
+            <div class="color-input-group">
+              <input type="color" id="secondary_color" name="secondary_color" value="#64748b">
+              <input type="text" id="secondary_color_hex" class="color-hex-input"
+                     value="#64748b" maxlength="7" placeholder="#64748b"
+                     aria-label="Secondary color hex value">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="divi_template">Divi Template</label>
+          <select id="divi_template" name="divi_template">
+            {% for template in divi_templates %}
+            <option value="{{ template }}">{{ template }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Book Portfolio ──────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Book Portfolio</h2>
+
+        <div id="books-container">
+          <!-- First row is in the HTML; subsequent rows are cloned by addBook() -->
+          <div class="book-row" data-index="0">
+            <div class="book-row-header">
+              <span class="book-row-label">Book 1</span>
+              <!-- Hidden initially; shown when a second row is added -->
+              <button type="button" class="btn-remove-book" style="display:none"
+                      onclick="removeBook(this)">Remove</button>
+            </div>
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" name="book_title[]" placeholder="The Midnight Code">
+            </div>
+            <div class="form-group">
+              <label>Cover Image</label>
+              <input type="file" name="book_cover[]" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea name="book_description[]" rows="2"
+                        placeholder="A brief description of the book..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Buy Links <span class="hint">— Amazon, Barnes &amp; Noble, etc.</span></label>
+              <input type="text" name="book_buy_links[]"
+                     placeholder="https://amazon.com/dp/..., https://barnesandnoble.com/...">
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-secondary" onclick="addBook()">+ Add Another Book</button>
+      </div>
+
+      <!-- ── Social & Marketing ──────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Social &amp; Marketing</h2>
+
+        <div class="form-group">
+          <label for="newsletter_link">Newsletter Signup Link or Kit Form ID</label>
+          <input type="text" id="newsletter_link" name="newsletter_link"
+                 placeholder="https://app.kit.com/... or Kit form ID">
+        </div>
+
+        <div class="form-group">
+          <label>Social Media Links <span class="hint">— all optional</span></label>
+          <div class="social-links">
+            <div class="social-link-row">
+              <span class="social-label">Twitter / X</span>
+              <input type="url" name="social_twitter" placeholder="https://twitter.com/janedoe">
+            </div>
+            <div class="social-link-row">
+              <span class="social-label">Instagram</span>
+              <input type="url" name="social_instagram" placeholder="https://instagram.com/janedoe">
+            </div>
+            <div class="social-link-row">
+              <span class="social-label">Facebook</span>
+              <input type="url" name="social_facebook" placeholder="https://facebook.com/janedoe">
+            </div>
+            <div class="social-link-row">
+              <span class="social-label">TikTok</span>
+              <input type="url" name="social_tiktok" placeholder="https://tiktok.com/@janedoe">
+            </div>
+            <div class="social-link-row">
+              <span class="social-label">YouTube</span>
+              <input type="url" name="social_youtube" placeholder="https://youtube.com/@janedoe">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Domain & DNS ────────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Domain &amp; DNS</h2>
+
+        <div class="form-group">
+          <label for="dns_domain">Domain Name</label>
+          <input type="text" id="dns_domain" name="dns_domain"
+                 placeholder="janedoeauthor.com">
+          <span class="field-hint">
+            Used for Cloudways app configuration and Cloudflare A record creation.
+            Typically the same as the site domain above.
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" name="nameservers_pointed" value="yes">
+            Nameservers are already pointed to Cloudflare
+          </label>
+        </div>
+      </div>
+
+      <!-- ── Site Type ───────────────────────────────────────── -->
+      <div class="form-section">
+        <h2 class="section-title">Site Type</h2>
+
+        <div class="form-group">
+          <span class="field-label">Ecommerce Site?</span>
+          <span class="field-hint">
+            Ecommerce sites are provisioned on a dedicated server, which affects pricing.
+          </span>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="ecommerce" value="no" checked>
+              No — standard author site (shared server)
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="ecommerce" value="yes">
+              Yes — ecommerce site (dedicated server)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Submit ──────────────────────────────────────────── -->
+      <div class="form-actions">
+        <button type="submit" class="btn-primary btn-large" id="submit-btn">
+          Generate Site
+        </button>
+        <span class="required-note"><span class="required">*</span> Required fields</span>
+      </div>
+
+    </form>
+  </main>
+
+  <script src="{{ url_for('static', filename='onboard.js') }}"></script>
+</body>
+</html>
