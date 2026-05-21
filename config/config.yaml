@@ -1,0 +1,16 @@
+# Author Website Generator — Server Inventory
+# No secrets in this file. All credentials come from environment variables.
+# Fill in FILL_IN_* placeholders with real values from the Cloudways dashboard.
+
+servers:
+  - id: shared-standard
+    name: "Shared Non-Ecommerce Server"
+    type: shared_standard
+    ip: "209.38.70.166"
+    cloudways_server_id: "1628107"
+
+  - id: ecommerce-demo
+    name: "Ecommerce Demo Server"
+    type: ecommerce_demo
+    ip: "FILL_IN_SERVER_IP"
+    cloudways_server_id: "FILL_IN_CLOUDWAYS_SERVER_ID"

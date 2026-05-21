@@ -131,9 +131,6 @@ The generator is triggered by a single form (one page, username/password protect
 - Domain name (for Cloudways app configuration and Cloudflare DNS record)
 - Confirm: nameservers already pointed to Cloudflare? (checkbox)
 
-### Site Type
-- Ecommerce site? (yes/no) — determines which server the app is provisioned on
-
 ---
 
 ## Onboarding Flow: Intake to Live Site
@@ -150,8 +147,7 @@ On error: show full error message (persists until user dismisses via X or resubm
         ↓
 Orchestration app receives form data
         ↓
-[ Step 1 ] Cloudways API → create new Application on the correct server
-           (non-ecommerce server OR new dedicated server if ecommerce)
+[ Step 1 ] Cloudways API → create new Application on the shared non-ecommerce server
         ↓
 [ Step 2 ] SSH into server → clone starter kit repo into new app folder
            Starter kit = custom Divi child theme + mu-plugin + standard plugin list
@@ -190,7 +186,7 @@ Live site ✓
 - Email hosting setup
 - Client self-service access to the generator form
 - v2 deployment behavior (database propagation to client sites)
-- Ecommerce functionality beyond server isolation
+- Ecommerce support (dedicated server routing, ecommerce flag on form) — deferred to Milestone 6
 
 ---
 
@@ -222,7 +218,7 @@ Live site ✓
 
 Before any agent starts Milestone 1, Levi must provide:
 
-1. **Cloudways server inventory** — For each server (shared non-ecommerce, ecommerce demo, any existing ecommerce client servers): the Cloudways server ID, the server's public IP address, and a human-readable name. These seed `config/config.yaml` directly.
+1. **Cloudways server inventory** — For the shared non-ecommerce server: the Cloudways server ID, the server's public IP address, and a human-readable name. These seed `config/config.yaml` directly. (Ecommerce servers are handled in Milestone 6.)
 2. **Admin credentials decision** — Confirm that the generator app's login username and password will come from environment variables (`ADMIN_USERNAME`, `ADMIN_PASSWORD`). If a different auth scheme is preferred (e.g., a secrets manager), say so now — changing this after M1 is messy.
 3. **Python version** — Confirm target Python version (3.11+ assumed; override if needed).
 4. **Web framework confirmation** — Flask is assumed. Override to FastAPI if preferred. This decision propagates through every route file.
@@ -237,7 +233,7 @@ Establish the project layout, dependency manifest, environment variable contract
 - `requirements.txt`
 - `.env.example`
 - `pytest.ini`
-- `config/config.yaml` — server inventory: shared non-ecommerce server, ecommerce example server, per-ecommerce-client servers; Cloudways + Cloudflare API credentials pointers
+- `config/config.yaml` — server inventory: shared non-ecommerce server (ecommerce servers added in Milestone 6); Cloudways + Cloudflare API credentials pointers
 - `config/loader.py` — loads and validates config.yaml; raises on missing required keys
 - `models/config_models.py` — Pydantic models for config schema (ServerEntry, AppConfig, etc.)
 - `tests/unit/test_config_loader.py`
@@ -344,7 +340,7 @@ Transactional email sender for the post-provisioning welcome message.
 Pydantic models for all onboarding form fields. These are the validated input contract handed to the orchestrator.
 
 **Files:**
-- `models/onboarding.py` — `BookEntry`, `SocialLinks`, `OnboardingForm` covering all fields from the spec: client identity, site identity, genre & branding, book portfolio (list of `BookEntry`), social & marketing, domain & DNS, site type (ecommerce flag)
+- `models/onboarding.py` — `BookEntry`, `SocialLinks`, `OnboardingForm` covering all fields from the spec: client identity, site identity, genre & branding, book portfolio (list of `BookEntry`), social & marketing, domain & DNS
 - `tests/unit/test_onboarding_models.py` — valid input passes, required fields enforced, hex color validation, URL validation on social links
 
 ---
@@ -382,7 +378,7 @@ Before any agent starts Milestone 3, Levi must provide:
 #### Stream 3A — Cloudways Steps (Steps 1 & 6)
 
 **Files:**
-- `provisioning/steps_cloudways.py` — `step1_create_application(form, config)`: creates app on correct server (non-ecommerce shared server or new dedicated server based on ecommerce flag), polls until ready, returns app credentials and server IP; `step6_attach_domain_and_ssl(app_id, domain)`: attaches domain, triggers SSL provisioning
+- `provisioning/steps_cloudways.py` — `step1_create_application(form, config)`: creates app on the shared non-ecommerce server, polls until ready, returns app credentials and server IP; `step6_attach_domain_and_ssl(app_id, domain)`: attaches domain, triggers SSL provisioning
 - `tests/unit/test_steps_cloudways.py`
 
 > **Risk (critical sequencing bug in the spec):** Step 6 (SSL provisioning) is listed before Step 7 (Cloudflare DNS). This is backwards: Cloudways SSL provisioning via Let's Encrypt requires the domain's DNS to already resolve to the server. Running Step 6 before Step 7 will cause SSL provisioning to fail.
@@ -508,3 +504,65 @@ Addresses the attack surface defined in the spec: login form is the only entry p
 - `app.py` (update) — enforce CSRF protection on all POST routes (Flask-WTF or equivalent); set secure session cookie flags (`HttpOnly`, `Secure`, `SameSite=Strict`)
 - `config/loader.py` (update) — assert no secrets present in config.yaml at load time; secrets must come from env vars only
 - `routes/onboarding.py` (update) — validate that no raw API response data is passed through to the client-facing status endpoint; strip internal error details from user-facing messages
+
+---
+
+### Milestone 6 — Ecommerce Support
+
+**Goal:** The system can provision ecommerce author sites onto dedicated servers. An ecommerce flag on the form routes provisioning to a new dedicated Cloudways server instead of the shared server. The ecommerce demo site is provisioned and documented.
+
+**Exit criterion:** Submitting the form with the ecommerce flag set provisions an app on a dedicated ecommerce server (not the shared server); the ecommerce demo site is live; all new tests pass.
+
+**Dependency:** Milestone 5 complete.
+
+#### Human Prerequisites
+
+Before any agent starts Milestone 6, Levi must provide:
+
+1. **Ecommerce demo server inventory** — The Cloudways server ID, public IP address, and human-readable name for the ecommerce demo server. This is added as a second entry in `config/config.yaml`.
+2. **Dedicated server provisioning decision** — When a new ecommerce client is onboarded, does Levi manually create the dedicated Cloudways server first (then paste its ID into config), or should the generator create a brand-new server via the Cloudways API? The answer determines whether `step1_create_application` needs server-creation logic or just server-selection logic.
+3. **Divi license upgrade** — Confirm the Divi developer license is in place before the first real ecommerce client site is provisioned. (Single-site license covers the demo only.)
+
+---
+
+#### Stream 6A — Config & Model Updates
+
+Add the ecommerce demo server to the inventory and extend the data model to carry the ecommerce flag.
+
+**Files:**
+- `config/config.yaml` (update) — add ecommerce demo server entry (`type: ecommerce_demo`)
+- `models/onboarding.py` (update) — add `is_ecommerce: bool` field to `OnboardingForm`
+- `tests/unit/test_onboarding_models.py` (update) — cover ecommerce flag validation
+
+---
+
+#### Stream 6B — Form UI Update
+
+Add the ecommerce site type field to the onboarding form.
+
+**Files:**
+- `templates/onboarding.html` (update) — add "Ecommerce site?" yes/no toggle in a new Site Type section
+- `static/js/form.js` (update) — include `is_ecommerce` in the submitted payload
+
+---
+
+#### Stream 6C — Provisioning Step Update
+
+Route Step 1 to the correct server based on the ecommerce flag.
+
+**Files:**
+- `provisioning/steps_cloudways.py` (update) — `step1_create_application`: if `form.is_ecommerce` is true, look up the dedicated ecommerce server from config (by type `ecommerce_demo` for the demo, or a client-specific `dedicated_ecommerce` entry); provision there instead of the shared server
+- `tests/unit/test_steps_cloudways.py` (update) — assert non-ecommerce jobs go to shared server; assert ecommerce jobs go to dedicated server
+
+> **Risk:** If the dedicated ecommerce server entry is missing from config when an ecommerce job is submitted, the orchestrator must fail loudly before any Cloudways app is created — not silently fall back to the shared server.
+>
+> **Mitigation:** `step1_create_application` looks up the target server by ID/type and raises a typed `ServerNotConfiguredError` if no matching server is found. The orchestrator surfaces this as a pre-run validation failure, not a mid-pipeline error.
+
+---
+
+#### Stream 6D — Ecommerce Demo Site
+
+Provision the ecommerce demo site on the dedicated server and document it.
+
+**Files:**
+- `README.md` (update) — document the ecommerce demo site URL, its server, and the process for adding new dedicated ecommerce client servers to `config/config.yaml`
