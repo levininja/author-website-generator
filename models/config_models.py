@@ -4,12 +4,11 @@ from pydantic import BaseModel
 
 
 class ServerType(str, Enum):
-    shared_standard = "shared_standard"
-    ecommerce_demo = "ecommerce_demo"
-    dedicated_ecommerce = "dedicated_ecommerce"
+    standard = "standard"
+    ecommerce = "ecommerce"
 
 
-class ServerEntry(BaseModel):
+class WebsiteServer(BaseModel):
     id: str
     name: str
     type: ServerType
@@ -18,7 +17,7 @@ class ServerEntry(BaseModel):
 
 
 class AppConfig(BaseModel):
-    servers: list[ServerEntry]
+    website_servers: list[WebsiteServer]
 
-    def get_server(self, server_id: str) -> Optional[ServerEntry]:
-        return next((s for s in self.servers if s.id == server_id), None)
+    def get_server(self, server_id: str) -> Optional[WebsiteServer]:
+        return next((s for s in self.website_servers if s.id == server_id), None)

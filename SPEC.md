@@ -1,10 +1,26 @@
 # Author Website Generator — Product Spec
 
+Related documents: [README](README.md) · [Feature list](FEATURES.md) · [Product decisions](DECISIONS.md) · [Provisioning pipeline](PIPELINE.md)
+
 ---
 
 ## The Product Definition
 
 The product is an engineering-grade, managed website service built exclusively for authors. It replaces manual, one-off contractor builds with standardized, high-performance WordPress platforms. The system functions as a productized service—balancing affordability with technical stability—while guaranteeing authors retain full autonomy, true site portability, and domain ownership.
+
+## Common Terms
+
+- **AWG:** The Author Website Generator application itself. AWG contains the public product and marketing pages, onboarding experience, website-generation workflow, previews, and future account and service-management functionality. It is separate from the author websites it generates.
+- **End user:** A person using AWG to create an author website. An end user does not need an account before using onboarding or generating a website.
+- **User account:** A future AWG account used to associate an end user with generated websites and account-management functionality. Account creation is not part of onboarding and is not a prerequisite for generation.
+- **User ID:** AWG's internal identifier for a user account. It is a randomly generated, non-sequential UUID and is not an email address or other personally identifiable information.
+- **Onboarding:** The public, single-page form where an end user supplies author, book, branding, and related website metadata and clicks the button to generate an author website. In this codebase, onboarding does not mean account registration, payment setup, or an internal administrative process.
+- **Website generation:** Transforming validated onboarding data into the complete website code and assets needed for an AWG preview. Generation does not create production infrastructure or deploy a live WordPress site.
+- **Generated-site preview:** The generated website as viewed inside AWG at `/site/<site_id>`. A preview is not a production WordPress installation.
+- **Production author website:** The independent WordPress/PHP website created for an author on production hosting. It is separate from AWG and from the generated-site preview.
+- **Provisioning:** Creating and configuring the production infrastructure and WordPress installation for an author website, including hosting, WordPress setup, DNS, and SSL.
+- **Provisioning pipeline:** The ordered, automated production-provisioning workflow documented in [PIPELINE.md](PIPELINE.md). The pipeline is distinct from website generation.
+- **Deployment:** Releasing AWG application code or updated shared WordPress code to its runtime environment. Deployment is distinct from generating a preview and from provisioning a new production author website.
 
 
 ### Core Features & Author Tools
@@ -25,7 +41,7 @@ The product is an engineering-grade, managed website service built exclusively f
 
 ## Technical Architecture & Decisions
 ### Core Platform & Tech Stack of This Project
-Python
+Python / Django 5.2 LTS
 
 ### Core Platform & Tech Stack of Websites we will Generate
 
@@ -80,18 +96,18 @@ Python
 
 ### Security
 
-- The orchestration/generator web app is deployed as a public-facing URL but is a **black box** to anyone without credentials:
-  - The single page (the onboarding/generation form) is protected by username and password.
-  - No external API endpoints exposed.
-  - Nothing accessible to unauthenticated users — no attack surface beyond the login form.
-- Future consideration: potentially allow clients to access the form themselves to self-provision, but this is not planned and requires significant security review before implementation.
+- AWG landing and marketing pages are public-facing.
+- The onboarding form and website-generation flow are public. An end user can generate a website before creating an account. See [Product decisions](DECISIONS.md#users-can-generate-a-website-before-creating-an-account).
+- Account creation, authentication, and associating a generated website with an account happen after generation and will be implemented as separate features.
+- Future account-management and administrative functionality must require authentication and appropriate authorization.
+- Public endpoints are limited to the product flows that explicitly require them; internal management and provisioning endpoints are not exposed to unauthenticated users.
 
 ### Integrations
 
 - **Newsletter:** Kit (ConvertKit) — v1.
 - **BookFunnel, StoryOrigin, BetaBooks, BetaReader.io, Plottr:** Solve later.
 - **Substack:** Solve later.
-- **Billing / Client Management:** Solve later.
+- **Billing / Client Management:** Solve later. Users get a 7-day free trial after site creation; payment required after that to keep the site live. See [Product decisions](DECISIONS.md#users-get-a-7-day-free-trial).
 - **Analytics & Feedback:** Solve later.
 - **Email Hosting:** Solve later.
 
@@ -99,7 +115,7 @@ Python
 
 ## Onboarding Form — Inputs
 
-The generator is triggered by a single form (one page, username/password protected). Fields:
+The generator is triggered by the public, single-page onboarding form. Fields:
 
 ### Client Identity
 - Author name (as it appears publicly)
@@ -204,7 +220,7 @@ Live site ✓
 - Email hosting setup
 - Client self-service access to the generator form
 - v2 deployment behavior (database propagation to client sites)
-- Ecommerce support (dedicated server routing, ecommerce flag on form) — deferred to Milestone 6
+- Ecommerce support (dedicated server routing, ecommerce flag on form) — see F008/T001 in FEATURES.md
 
 ---
 

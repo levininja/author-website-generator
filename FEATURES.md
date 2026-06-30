@@ -1,46 +1,50 @@
 # Author Website Generator — Feature List
 
-Two lists: **Feature List** (priority order) and **Backlog** (unordered).
+Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product decisions](DECISIONS.md) · [Provisioning pipeline](PIPELINE.md)
 
-ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
+## ID Tracker
 
----
+- Latest feature ID: `F023`
+- Latest task ID: `T002`
+- Latest research ID: `R001`
 
-## Feature List
+Four lists: **Doing** (active work), **Milestone 1** (ordered by priority), **Backlog** (unordered), and **Done**.
 
----
-
-### R001 — Document Divi option keys for site configuration
-
-**Type:** Research Task
-**As** a developer on this project, I need a reference document of how Divi stores configuration in WordPress so that the site configuration step can be implemented correctly and maintainably.
-**Deliverable:** `divi_option_keys.md`
-
-- Run `wp option list --search="et_*" --format=json` against a configured Divi install (requires SSH access to a live Divi site)
-- Document every relevant WP option key Divi uses for brand colors and template selection
-- Document the exact value format each key expects (Divi stores data as serialized PHP arrays — format matters)
-- Include recommended mapping from each `OnboardingForm` field to its corresponding option key
-- Note any version-specific caveats for the Divi version in use
-- Blocks F004 (Divi template picker) and the site configuration step within F005
+ID prefixes: `F` = feature, `T` = task, `R` = research task.
 
 ---
+
+## Doing
 
 ### F001 — Fill out the client onboarding form
 
 **Type:** Feature
-**As** an end user, I can fill out a single-page form with all client details so I have everything needed to provision a site.
+**As** an end user, I can fill out a single-page form with all author details so AWG has everything needed to generate and preview a site.
 
-- Form is auth-gated — only accessible when logged in (`GET /`)
-- **Client Identity fields:** author name (as it appears publicly), author email, WordPress admin username, WordPress admin password
-- **Site Identity fields:** site/domain name (e.g. `janedoeauthor.com`), site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
+- **Client Identity fields:** author name (as it appears publicly), author email
+- **Site Identity fields:** website name, site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
 - **Genre & Branding fields:** genre(s) — multi-select or free text; primary brand color (hex); secondary brand color (hex)
 - **Social & Marketing fields:** newsletter signup link or Kit form ID; Twitter/X, Instagram, Facebook, TikTok, YouTube (all optional)
-- **Domain & DNS fields:** domain name (used for Cloudways app config and Cloudflare DNS record); checkbox confirming nameservers are already pointed to Cloudflare
 - Client-side required-field validation before submission is allowed
 - Hex color validation and URL validation on social link fields
-- Files: `models/onboarding.py` (Pydantic models: `BookEntry`, `SocialLinks`, `OnboardingForm`), `tests/unit/test_onboarding_models.py`, `templates/onboarding.html`, `static/css/form.css`, `static/js/form.js`
+- Files: `models/onboarding.py` (Pydantic models: `BookEntry`, `SocialLinks`, `OnboardingForm`), `tests/unit/test_onboarding_models.py`, `onboarding/templates/onboarding/onboard.html`, `onboarding/static/onboarding/style.css`, `onboarding/static/onboarding/onboard.js`
 - Tests: valid input passes, required fields enforced, hex color validation, URL validation on social links
 - **Human prerequisite:** Levi must sign off on the field list before this is built — any missing fields discovered after this ships require retroactive changes across models, form HTML, and orchestrator
+
+**Dev note:** The form HTML and client-side JS scaffolding already exist in `onboarding/templates/onboarding/onboard.html` and `onboarding/static/onboarding/onboard.js`. Remaining work for this feature: Pydantic models in `models/onboarding.py`, server-side validation on `POST /generate`, and the test file `tests/unit/test_onboarding_models.py`.
+
+---
+
+## Milestone 1
+
+Milestone 1 is v1 of the product: a user can complete the single-page author
+website form, submit it, and have AWG generate the full code for a new author
+website. Each generated site receives a unique ID and can be viewed inside the
+AWG application at `/site/<site_id>`.
+
+Milestone 1 stops at generation and preview. It does not include payments,
+billing, website maintenance, admin pages, production deployment, customer
+domains, DNS, SSL, or production hosting.
 
 ---
 
@@ -50,9 +54,11 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
 **As** an end user, I can add multiple books to the form and add or remove book entries dynamically without reloading the page.
 
 - Each book entry: title, cover image upload, description, buy links
-- Add/remove rows handled client-side by `static/js/form.js` — no page reload
+- Add/remove rows handled client-side by `onboarding/static/onboarding/onboard.js` — no page reload
 - Book entries modeled as a list of `BookEntry` in `OnboardingForm`
-- Book data gets written to the WordPress site in the site configuration step (Step 5) of F005
+- Book data is passed to F005 and rendered into the generated website
+
+**Dev note:** Dynamic add/remove book row UI is already implemented in `onboarding/static/onboarding/onboard.js` and `onboarding/templates/onboarding/onboard.html`. Remaining work: `BookEntry` Pydantic model in `models/onboarding.py` and wiring book data into the generation pipeline.
 
 ---
 
@@ -62,186 +68,78 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
 **As** an end user, I can upload an image file directly in the form so it gets placed on the generated site's About section automatically.
 
 - Image upload field in the onboarding form
-- Headshot applied to the site via WP-CLI in the site configuration step (Step 5) of F005
+- Validate the file type and size before generation
+- Headshot is copied into the generated site's assets and rendered in its About section
+
+**Dev note:** The headshot file input already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: server-side file handling, size/type validation, and integration with site generation.
 
 ---
 
 ### F004 — Select a Divi template with visual preview
 
 **Type:** Feature
-**As** an end user, I can browse available Divi templates, click each one to see a screenshot of what a site built with that template looks like, and select the one I want applied to the provisioned site.
+**As** an end user, I can browse available Divi templates, click each one to see a screenshot of what a site built with that template looks like, and select the one I want applied to the generated site.
 
 - Original spec had this as a plain dropdown — this feature upgrades it to a visual picker (clickable thumbnails with screenshots)
-- Selected template value included in `OnboardingForm` and passed to the site configuration step (Step 5) of F005
-- Template selection written via `wp option update` or `wp post meta update` using the key names documented in R001
-- **Blocked by R001** — the WP-CLI write for template selection cannot be implemented without the Divi option key research
+- Selected template value is included in `OnboardingForm` and passed to F005
+- The generator uses the selected template as the basis for the generated website code
+
+**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: upgrade to a visual clickable thumbnail picker with screenshot assets.
 
 ---
 
-### F005 — Submit the form and watch the site provision in real time
+### F005 — Generate the full author website code
 
 **Type:** Feature
-**As** an end user, after submitting the form I can watch labeled provisioning steps update live so I know what's happening and where the process is at.
+**As** an end user, I want my submitted form data turned into a complete author website so that I can review the generated result.
 
-**Provisioning pipeline (corrected order — see sequencing note):**
-
-- **Step 1:** Cloudways API → create new application on the shared non-ecommerce server
-- **Step 2:** SSH → clone starter kit repo into new app folder (starter kit = custom Divi child theme + mu-plugin + standard plugin list)
-- **Step 3:** WP-CLI → install WordPress core
-- **Step 4:** WP-CLI → import starter database (pre-built Divi layouts, standard pages: Home, About, Books, Contact)
-- **Step 5:** WP-CLI → set all client-specific values (site name, tagline, author bio, colors, headshot, social links, Kit newsletter form, book portfolio, selected Divi template)
-- **Step 6:** Cloudflare API → create A record pointing client domain to server IP
-- **Step 7 (DNS wait):** Poll Cloudflare's `1.1.1.1` DNS-over-HTTPS until domain resolves to correct server IP; configurable timeout, default 10 minutes; show "Waiting for DNS propagation" label in UI during wait
-- **Step 8:** Cloudways API → attach client's domain to the new app + provision SSL
-- **Step 9:** Email → send client WordPress admin URL and credentials (see F006)
-- **Step 10:** Show success with site URL (see F007)
-
-> **Sequencing note — correction from original spec:** SSL provisioning (Step 8) must come after DNS resolves (Steps 6+7). The original spec had SSL before DNS, which causes Let's Encrypt to fail because the domain doesn't yet resolve to the server. Corrected order: 1 → 2 → 3 → 4 → 5 → 6 → 7(DNS wait) → 8 → 9. The Onboarding Flow diagram in SPEC.md must be updated to reflect this when the step is implemented.
-
-**Preflight check (runs before Step 1, not a numbered provisioning step):**
-- Verify SSH connectivity to the server
-- Verify WP-CLI is installed and callable on the server
-- Verify GitHub SSH access (`ssh -T git@github.com` returns exit code 1 with "successfully authenticated" in stderr — this is GitHub's expected behavior, not an error)
-- If any preflight check fails, abort the entire job before any Cloudways app is created — prevents orphaned apps that need manual cleanup
-- Surface a specific error message identifying which preflight check failed
-
-**Background job model:**
-- `POST /provision` starts a background thread and returns `{"job_id": "..."}` within milliseconds — the HTTP request does not block for the ~5–10 minute provisioning duration
-- `threading.Thread` for v1 (simple, no infrastructure dependency); switch to Celery only if multi-operator use is needed — confirm this decision before starting, as changing it after the fact requires rewriting both the orchestrator and the routes
-- `ProvisioningJob` dataclass fields: status, current_step, error, result_url
-- Jobs stored in an in-memory dict keyed by job ID
-- Known limitation (must be documented in code and README): if the process restarts, in-flight jobs are lost and the partially-provisioned Cloudways app must be cleaned up manually — acceptable for v1 single-operator use
-
-**Cloudways API client:**
-- Methods: `create_application()`, `poll_until_ready()`, `attach_domain()`, `provision_ssl()`, `get_server_ip()`
-- App creation is asynchronous — API returns an operation ID; must poll until app status is `running`
-- `poll_until_ready(operation_id, timeout_seconds=600, initial_delay=5, max_delay=30)` with exponential backoff
-- Raises typed `ProvisioningTimeoutError` on timeout (not a generic exception) so the orchestrator can handle it distinctly
-- Log each poll attempt with elapsed time — useful for debugging slow provisioning
-- Files: `integrations/cloudways.py`, `tests/unit/test_cloudways_client.py`
-
-**Cloudflare API client:**
-- Methods: `get_zone_id_for_domain()`, `create_a_record()`, `delete_a_record()`
-- Zone lookup is dynamic — do not require a zone ID in the form; look it up from the API using the domain name
-- API token must have `Zone:Read` AND `DNS:Edit` permissions — document required permissions in `.env.example`
-- `get_zone_id_for_domain()` queries `/zones?name=<apex_domain>`; raises typed `ZoneNotFoundError` with human-readable message ("Domain not found in Cloudflare account — has the client pointed their nameservers to Cloudflare yet?") if zone not found
-- Cache zone ID for the duration of the provisioning job — no re-lookup needed for subsequent calls
-- Files: `integrations/cloudflare.py`, `tests/unit/test_cloudflare_client.py`
-
-**SSH & WP-CLI runner:**
-- `SSHRunner` class: connect, `run(command)` → `CommandResult(stdout, stderr, exit_code)`, `upload_file()`, disconnect; configurable timeout and retry
-- `run()` raises `SSHCommandError(command, stderr)` on any non-zero exit code — stderr always included in the exception message
-- Per-command timeout (default 120s, configurable per call) enforced via paramiko channel deadline; hung command raises `SSHTimeoutError`
-- Transient connection errors (`socket.timeout`, `EOFError`) trigger exactly one automatic retry after a 5-second delay
-- WP-CLI logical errors (non-zero exit) are never retried — retrying a failed `wp core install` would produce undefined state
-- All commands logged at DEBUG level with full stdout/stderr for post-mortem debugging
-- Files: `provisioning/ssh_runner.py`, `tests/unit/test_ssh_runner.py`
-- Tests: mock paramiko; cover success path, non-zero exit code, timeout, connection refused
-
-**Step 2 — clone starter kit:**
-- Clone via SSH (not HTTPS) — requires a deploy key registered on both the Cloudways server and the GitHub repo
-- Fail loudly on auth failure — do not silently continue
-- Human prerequisite: starter kit repo must be populated with actual files (Divi child theme directory, mu-plugin directory, plugin list file/install script, `starter.sql`); SSH deploy key must be installed on both GitHub and Cloudways before this step can run
-
-**Step 3 — WP core install (idempotency):**
-- Run `wp core is-installed` first; if exit code 0 (already installed), skip Steps 3 and 4 entirely and log a WARNING
-- Makes the pipeline safely retryable from any step without manual cleanup
-
-**Step 5 — configure site:**
-- Mapping of `OnboardingForm` fields to Divi option keys defined as a constant dict at the top of `steps_wordpress.py` (not scattered through the function) — easy to update when Divi releases a breaking change
-- After Step 5 runs, a validation pass reads the options back via `wp option get` and asserts the written values match — fails loudly rather than silently producing a misconfigured site
-- **Blocked by R001** for the template selection and color mapping portions
-
-**Orchestrator:**
-- `run_provisioning(form, config)` executes steps sequentially, updating job state after each
-- Records which step failed, wraps error with context, exposes job status for polling
-- Files: `orchestrator.py`, `tests/unit/test_orchestrator.py`
-- Tests: happy path completes all steps; failure at step N records step N and error; correct step order enforced
-
-**Status UI:**
-- Labeled steps with active / complete / error states
-- `GET /status/<job_id>` returns job state as JSON
-- `static/js/status.js` polls every 3 seconds
-- During DNS wait: shows "Waiting for DNS propagation" label
-- Files: `routes/onboarding.py`, `templates/status.html`, `static/js/status.js`
-- `app.py` (update) — register the new onboarding blueprint/routes; `app.py` itself was created in M1 and is not re-created here
-
-**Human prerequisites before starting this feature:**
-- Cloudways API key (generate in dashboard, store in `.env`)
-- Cloudflare API token with Zone:Read + DNS:Edit, documented in `.env.example`
-- Email provider decision: SMTP host, port, credentials, from-address (options: Postmark, Mailgun, Gmail SMTP)
-- Starter kit GitHub repo URL (must exist with correct structure — even a skeleton repo is sufficient to unblock SSH runner tests)
-- Visual sign-off on form UI before backend is wired — layout or field changes after wiring create rework across route and data models
-- Background job model confirmation (threading.Thread assumed for v1)
-- Live dev environment for end-to-end testing: real Cloudways server + real Cloudflare zone (throwaway domain is fine)
-- Test Cloudways app available for SSH smoke-testing before orchestrator wires up
-
----
-
-### F006 — Client automatically receives a welcome email
-
-**Type:** Feature
-**As** a client author, I receive an email with my WordPress admin URL and login credentials as soon as my site is provisioned, without my account manager having to send it manually.
-
-- Triggered as Step 9 of the provisioning pipeline in F005
-- `send_welcome_email(author_email, admin_url, username, password)`
-- SMTP-based; all credentials from env vars
-- Files: `integrations/email_sender.py`, `templates/email/welcome.html`, `tests/unit/test_email_sender.py`
+- `generate_site(form)` validates the submitted onboarding data and generates the full website code, including all pages, content, styling, and assets required for the preview
+- Generation uses the selected template and applies the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
+- The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
+- Generation failures return a safe, human-readable error and do not create a partial site record
+- Files: `generator.py`, `tests/unit/test_generator.py`
+- Tests: complete generation, optional-field handling, invalid input, template/content mapping, and generation failure
 
 ---
 
 ### F007 — Get a clear result — site URL on success, specific error on failure
 
 **Type:** Feature
-**As** an end user, when provisioning completes I see the live site URL, and if it fails I see exactly which step failed with a human-readable error message so I know what to fix.
+**As** an end user, when generation completes I can open the generated website, and if it fails I see a human-readable error message.
 
-- On success: site URL displayed in the status UI
-- On failure: step name + specific error message (e.g. "Domain not found in Cloudflare — has the client pointed their nameservers yet?") + dismiss button
-- No internal API response details or stack traces exposed to the client-facing status endpoint — strip internal error details; surface only human-readable messages
+- On success: redirect to or display a link to `/site/<site_id>`
+- On failure: show a specific, actionable error plus a dismiss button
+- No internal exception details or stack traces are exposed to the user
 - Error display persists until the user dismisses it via X or resubmits
 
 ---
 
-### F008 — Provision an ecommerce site on a dedicated server
+### F019 — Protect website generation with reCAPTCHA v3
 
 **Type:** Feature
-**As** an end user, I can toggle an "ecommerce site" flag on the form so the new site gets provisioned on a dedicated server instead of the shared one.
+**As** the product owner, I want automated submissions blocked so that the public website-generation flow cannot be abused to consume generation resources.
 
-- "Ecommerce site?" yes/no toggle added to the form in a new Site Type section
-- `is_ecommerce: bool` field added to `OnboardingForm`
-- `step1_create_application`: if `form.is_ecommerce` is true, look up the dedicated ecommerce server from config by type; provision there instead of the shared server
-- If dedicated ecommerce server entry is missing from config: raise typed `ServerNotConfiguredError` immediately before any Cloudways app is created — never silently fall back to the shared server
-- Servers modeled in `config/config.yaml` as a typed list with a `type` field (`shared_standard`, `ecommerce_demo`, `dedicated_ecommerce`) and a required `id` field — adding a new ecommerce client server later = appending one list entry with no schema change (this schema was designed for extensibility in M1)
-- Files: `config/config.yaml` (update), `models/onboarding.py` (update), `templates/onboarding.html` (update), `static/js/form.js` (update), `provisioning/steps_cloudways.py` (update), `tests/unit/test_steps_cloudways.py` (update)
-- Tests: assert non-ecommerce jobs go to shared server; assert ecommerce jobs go to dedicated server; assert missing server config raises `ServerNotConfiguredError`
-- **Human prerequisites:** ecommerce demo server inventory (Cloudways server ID, public IP, human-readable name); decision on whether Levi manually pre-creates the dedicated server first (then pastes its ID into config) or the generator creates it via the Cloudways API — this determines whether `step1_create_application` needs server-creation logic or just server-selection logic; Divi developer license must be in place before the first real ecommerce client site is provisioned (single-site license covers the demo only)
+- Load reCAPTCHA v3 on the single-page generation form and request a token for the `generate_site` action immediately before submission
+- Submit the token with the form; `POST /generate` verifies it with Google's server-side verification API before validation or site generation begins
+- Reject missing, invalid, expired, wrong-action, wrong-hostname, and below-threshold tokens with a safe error response; no site ID or files are created
+- Keep the site key, secret key, and minimum score in environment configuration; the secret is never sent to the browser or logged
+- Fail closed when Google's verification service is unavailable
+- Tests mock the verification API and cover valid, missing, invalid, low-score, action mismatch, hostname mismatch, and service-failure responses
 
 ---
 
-### T001 — Provision the ecommerce demo site
-
-**Type:** Task
-**As** an end user, I can point prospective clients to a live example of an ecommerce author site so they can see what they'd be getting.
-**Deliverable:** A live ecommerce demo site URL, documented in the README with its Cloudways server ID and the process for adding new dedicated ecommerce client servers to `config/config.yaml`.
-
-- Manual task — use the working generator tool to provision the demo site; no new code required
-- Ecommerce demo server is a separate Cloudways server from the shared non-ecommerce server (`type: ecommerce_demo` in config)
-- The demo site also lives on the shared non-ecommerce server's example slot for non-ecommerce reference
-- **Depends on F008**
-
----
-
-### F009 — Log in to the generator tool (security hardening)
+### F020 — Store and preview each generated website
 
 **Type:** Feature
-**As** an end user, I can sign in with a username and password, and the tool locks me out after repeated failed attempts so unauthorized users can't brute-force access.
+**As** an end user, I can view the website generated from my submission on a newly created AWG page.
 
-- Basic username/password login and session management already implemented in M1 — items below are the remaining security hardening
-- Login rate limiting: 5 attempts per IP per 10 minutes (Flask-Limiter)
-- CSRF protection on all POST routes (Flask-WTF or equivalent)
-- Secure session cookie flags: `HttpOnly`, `Secure`, `SameSite=Strict`
-- Credentials come from env vars only (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) — never from `config.yaml` (already enforced in M1; `config/loader.py` hard-errors at startup if env vars are missing)
-- Files: `routes/auth.py` (rate limiting), `app.py` (CSRF + cookie flags)
+- After successful generation, create a cryptographically random, URL-safe unique site ID
+- Persist the complete generated code and the metadata required to serve it, keyed by site ID
+- `GET /site/<site_id>` renders the generated website within AWG; it is a preview, not a production deployment or customer hosting environment
+- Unknown or malformed IDs return 404 without exposing storage paths or other site records
+- A successful response from `POST /generate` includes the site ID and `/site/<site_id>` URL
+- Site creation is atomic: a preview becomes addressable only after all generated code has been written successfully
+- Tests cover unique ID creation, persistence, successful preview rendering, missing IDs, malformed IDs, and incomplete-write cleanup
 
 ---
 
@@ -249,7 +147,108 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
 
 ---
 
-### B001 — Automated deployments for the generator app
+The backlog contains work that is useful after Milestone 1 but is not required
+to generate and preview a website inside AWG.
+
+### R001 — Document Divi option keys for production site configuration
+
+**Type:** Research Task
+**As** a developer on this project, I need a reference for how Divi stores WordPress configuration so that generated sites can later be configured in production.
+**Deliverable:** `divi_option_keys.md`
+
+- Document relevant option keys, value formats, field mappings, and version caveats
+- Required for the production configuration portions of F017, not for Milestone 1 generation and preview
+
+---
+
+### F010 — Implement the pipeline status UI page
+
+**Type:** Feature
+**As** an end user, I can see the progress of long-running production provisioning.
+
+---
+
+### F011 — Run production provisioning as a background job
+
+**Type:** Feature
+**As** an end user, I can start production provisioning without holding an HTTP request open.
+
+---
+
+### F012 — Integrate the Cloudways API client
+
+**Type:** Feature
+**As** a developer, I can create and configure production applications through Cloudways.
+
+---
+
+### F013 — Integrate the Cloudflare API client
+
+**Type:** Feature
+**As** a developer, I can configure production DNS records through Cloudflare.
+
+---
+
+### F014 — Run SSH and WP-CLI commands reliably
+
+**Type:** Feature
+**As** a developer, I can execute production setup commands with predictable failures and timeouts.
+
+---
+
+### F015 — Clone the starter kit into a production application
+
+**Type:** Feature
+**As** an end user, I can have generated code copied into a production application.
+
+---
+
+### F016 — Install WordPress core in production
+
+**Type:** Feature
+**As** an end user, I can have WordPress installed in the production application.
+
+---
+
+### F017 — Configure the production site
+
+**Type:** Feature
+**As** an end user, I can have generated author content and branding applied to the production WordPress site.
+
+---
+
+### F006 — Send the client a production welcome email
+
+**Type:** Feature
+**As** a client author, I receive the production URL and credentials after deployment.
+
+---
+
+### F008 — Provision an ecommerce site on a dedicated server
+
+**Type:** Feature
+**As** an end user, I can deploy an ecommerce site on isolated production infrastructure.
+
+---
+
+### T001 — Provision the ecommerce demo site
+
+**Type:** Task
+**Deliverable:** A deployed ecommerce demo site.
+
+---
+
+### F009 — Log in to the generator tool
+
+**Type:** Feature
+**As** an administrator, I can access protected administrative capabilities.
+
+This is not required for the Milestone 1 user generation flow. Any future
+administrative pages must be separately authenticated and authorized.
+
+---
+
+### F018 — Automate deployments for the generator app
 
 **Type:** Feature
 **As** a developer on this project, I can merge to `main` and have the generator app deploy automatically so I don't have to manually SSH into the server to push updates.
@@ -258,11 +257,11 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
 - CI on every push to any branch: install deps, lint (flake8/ruff), type-check (mypy), run unit test suite
 - Deploy on merge to `main`: push to `production` branch, trigger Cloudways Git deployment via API
 - Cloudways Git integration: each server/app configured to pull from `production` branch on deploy trigger
-- **Human prerequisites:** decision on where the generator app itself lives (Cloudways app on shared server, or its own server — determines the deploy.yml target); GitHub Actions secrets configured (`CLOUDWAYS_API_KEY`, `CLOUDFLARE_API_TOKEN`, SMTP credentials, `ADMIN_USERNAME`, `ADMIN_PASSWORD`); GitHub repo created with Actions enabled
+- **Human prerequisites:** decision on where the generator app itself lives (Cloudways app on shared server, or its own server — determines the deploy.yml target); GitHub Actions secrets configured (`CLOUDWAYS_API_KEY`, `CLOUDFLARE_API_TOKEN`, SMTP credentials, `DJANGO_SECRET_KEY`); GitHub repo created with Actions enabled
 
 ---
 
-### B002 — Automated regression test suite
+### T002 — Build an automated regression test suite
 
 **Type:** Task
 **As** a client, I want confidence that when new features are rolled out the existing provisioning workflow still works end-to-end, so that my site isn't broken by an update.
@@ -272,3 +271,36 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task, `B` = backlog item.
 - `tests/integration/conftest.py` — shared fixtures: test Cloudways app credentials, test Cloudflare zone, cleanup teardown
 - `tests/integration/test_full_provision.py` — full provisioning flow with real API calls; verifies site URL returns HTTP 200 after completion; cleans up the test app on teardown
 - **Human prerequisite:** dedicated throwaway Cloudways app + Cloudflare zone reserved exclusively for testing — must not be a real client zone
+
+
+---
+
+## Done
+
+---
+
+### F021 — Set up Django application scaffold
+
+**Type:** Feature
+**As** a developer, I have a working Django project structure to build on.
+
+- Django 5.2 LTS project package in `awg/` with settings, URL conf, WSGI, and ASGI entrypoints
+- Custom `User` model in `accounts/` extending `AbstractUser` with a UUID v4 primary key (`AUTH_USER_MODEL = "accounts.User"`)
+- `onboarding/` Django app with `GET /onboard`, `POST /generate` (stub), and `/` → `/onboard` redirect
+- Django-namespaced templates in `onboarding/templates/onboarding/` and statics in `onboarding/static/onboarding/`
+- `requirements.txt` with pinned dependencies (Django, pydantic, PyYAML, python-dotenv, pytest, pytest-django)
+- `pytest.ini` configured for test discovery with `DJANGO_SETTINGS_MODULE`
+- `.env.example` documenting `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, and future env vars
+- 19 unit tests covering views, user model, config loading, and static file paths
+
+---
+
+### F023 — Server inventory config loading
+
+**Type:** Feature
+**As** a developer, I can define the server inventory in a YAML config file and have it validated on app startup.
+
+- `config/config.yaml` — YAML file tracking all servers (shared standard server, ecommerce demo server, and future ecommerce client servers)
+- `models/config_models.py` — `WebsiteServer` and `AppConfig` Pydantic models; `ServerType` enum with `standard` and `ecommerce` values
+- `config/loader.py` — `load_config(path)` parses and validates the YAML; raises `ConfigError` on missing file or invalid schema
+- 7 unit tests in `tests/unit/test_config_loader.py`

@@ -1,0 +1,16 @@
+# Author Website Generator — Server Inventory
+# Copy this file to config.yaml and replace the placeholders with real values.
+# Keep config.yaml local; it is intentionally ignored by Git.
+
+website_servers:
+  - id: shared-standard
+    name: "Shared Non-Ecommerce Server"
+    type: standard
+    ip: "FILL_IN_SERVER_IP"
+    cloudways_server_id: "FILL_IN_CLOUDWAYS_SERVER_ID"
+
+  - id: ecommerce-demo
+    name: "Ecommerce Demo Server"
+    type: ecommerce
+    ip: "FILL_IN_SERVER_IP"
+    cloudways_server_id: "FILL_IN_CLOUDWAYS_SERVER_ID"

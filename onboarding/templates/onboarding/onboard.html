@@ -1,16 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>New Author Site — Author Website Generator</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{% static 'onboarding/style.css' %}">
 </head>
 <body>
 
   <header class="page-header">
     <h1>Author Website Generator</h1>
-    <a href="/logout" class="logout-link">Log out</a>
   </header>
 
   <main class="form-container">
@@ -23,6 +23,7 @@
       enctype: required because the form accepts file uploads.
     -->
     <form id="onboard-form" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
 
       <!-- ── Client Identity ─────────────────────────────────── -->
       <div class="form-section">
@@ -241,28 +242,6 @@
         </div>
       </div>
 
-      <!-- ── Site Type ───────────────────────────────────────── -->
-      <div class="form-section">
-        <h2 class="section-title">Site Type</h2>
-
-        <div class="form-group">
-          <span class="field-label">Ecommerce Site?</span>
-          <span class="field-hint">
-            Ecommerce sites are provisioned on a dedicated server, which affects pricing.
-          </span>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="ecommerce" value="no" checked>
-              No — standard author site (shared server)
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="ecommerce" value="yes">
-              Yes — ecommerce site (dedicated server)
-            </label>
-          </div>
-        </div>
-      </div>
-
       <!-- ── Submit ──────────────────────────────────────────── -->
       <div class="form-actions">
         <button type="submit" class="btn-primary btn-large" id="submit-btn">
@@ -274,6 +253,6 @@
     </form>
   </main>
 
-  <script src="{{ url_for('static', filename='onboard.js') }}"></script>
+  <script src="{% static 'onboarding/onboard.js' %}"></script>
 </body>
 </html>
