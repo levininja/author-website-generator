@@ -1,4 +1,4 @@
-@charset "UTF-8";
+// Source stylesheet. Run `npm run scss` to generate style.css.
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -23,7 +23,9 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: radial-gradient(circle at top left, rgba(55, 87, 213, 0.1), transparent 35rem), #f3f5fa;
+  background:
+    radial-gradient(circle at top left, rgba(55, 87, 213, 0.1), transparent 35rem),
+    #f3f5fa;
 }
 
 button,
@@ -105,6 +107,7 @@ button:disabled {
     transform: translateY(0);
   }
 }
+
 .wizard-question h1 {
   max-width: 620px;
   margin: 0 0 28px;
@@ -153,8 +156,8 @@ button:disabled {
   box-shadow: 0 0 0 4px rgba(55, 87, 213, 0.13);
 }
 
-.wizard-question input[aria-invalid=true],
-.wizard-question textarea[aria-invalid=true] {
+.wizard-question input[aria-invalid="true"],
+.wizard-question textarea[aria-invalid="true"] {
   border-color: var(--danger);
 }
 
@@ -326,9 +329,10 @@ noscript {
   font-size: 0.82rem;
   color: var(--danger);
   opacity: 0.75;
-}
-.book-remove:hover {
-  opacity: 1;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .book-entry-fields {
@@ -336,38 +340,42 @@ noscript {
   grid-template-columns: 1fr;
   gap: 6px 0;
   padding: 14px;
-}
-.book-entry-fields label {
-  margin-top: 8px;
-  margin-bottom: 4px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-.book-entry-fields label:first-child {
-  margin-top: 0;
-}
-.book-entry-fields input,
-.book-entry-fields textarea {
-  display: block;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #bbc4d6;
-  border-radius: 7px;
-  outline: none;
-  font-size: 0.93rem;
-  color: var(--ink);
-  background: #fff;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
-}
-.book-entry-fields input:focus,
-.book-entry-fields textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(55, 87, 213, 0.12);
-}
-.book-entry-fields textarea {
-  resize: vertical;
-  min-height: 64px;
+
+  label {
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--ink);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  input,
+  textarea {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #bbc4d6;
+    border-radius: 7px;
+    outline: none;
+    font-size: 0.93rem;
+    color: var(--ink);
+    background: #fff;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+
+    &:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(55, 87, 213, 0.12);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 64px;
+  }
 }
 
 .book-add {
@@ -381,21 +389,26 @@ noscript {
     width: min(100% - 20px, 760px);
     padding-top: 20px;
   }
+
   .wizard-card {
     min-height: calc(100vh - 95px);
     padding: 24px 20px;
     border-radius: 13px;
   }
+
   .wizard-question {
     min-height: 330px;
     padding-top: 40px;
   }
+
   .review-list {
     grid-template-columns: 1fr;
   }
+
   .wizard-actions {
     align-items: stretch;
   }
+
   .wizard-actions-end {
     flex: 1;
     justify-content: flex-end;

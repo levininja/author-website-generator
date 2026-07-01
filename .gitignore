@@ -1,18 +1,36 @@
+# Python
 __pycache__/
 *.py[cod]
 *.so
-.env
-config/config.yaml
+*.egg-info/
+
+# Virtual environments
 .venv/
 venv/
 env/
 ENV/
-*.egg-info/
+
+# Local configuration
+.env
+config/config.yaml
+
+# Build output
 dist/
 build/
+
+# Node dependencies
+node_modules/
+
+# Test artifacts
 .pytest_cache/
-.DS_Store
-instance/
+
+# Databases
 *.db
 *.sqlite3
+
+# Runtime data
+instance/
 uploads/
+
+# OS files
+.DS_Store

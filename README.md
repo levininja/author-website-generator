@@ -9,6 +9,7 @@ Related documents: [Product spec](SPEC.md) · [Feature list](FEATURES.md) · [Pr
 **1. Install dependencies**
 ```bash
 pip install -r requirements.txt
+npm install
 ```
 
 **2. Configure environment**
@@ -27,10 +28,27 @@ python manage.py migrate
 
 **4. Run**
 ```bash
+npm run build:frontend
 python manage.py runserver
 ```
 
 The app runs on `http://localhost:8000` by default. Navigate to `/onboard` to open the form. No login is required.
+
+## Stylesheets
+
+SCSS is the stylesheet source of truth. Never edit generated CSS directly.
+
+Build CSS once:
+```bash
+npm run scss
+```
+
+Automatically rebuild CSS while editing SCSS:
+```bash
+npm run scss:watch
+```
+
+Keep the watcher running in a separate terminal alongside Django's development server. Generated CSS is committed so Django can serve it without requiring Sass at runtime.
 
 ## Project documentation
 
@@ -42,6 +60,7 @@ The app runs on `http://localhost:8000` by default. Navigate to `/onboard` to op
 ## Running tests
 ```bash
 pytest
+npm run test:frontend
 ```
 
 ## Project structure
@@ -55,17 +74,21 @@ accounts/               Custom user model (UUID primary key)
   models.py             User extends AbstractUser with UUIDField pk
   migrations/           Database migrations
 onboarding/             Public onboarding app
-  views.py              GET /onboard, POST /generate (stub), / redirect
+  views.py              GET /onboard, validated POST /generate, / redirect
   urls.py               URL patterns for this app
   templates/onboarding/ Django-namespaced HTML templates
-  static/onboarding/    Django-namespaced CSS and JS
+  static/onboarding/    Django-namespaced SCSS, generated CSS, and JS
 config/
   config.example.yaml   Tracked server-inventory template
   config.yaml           Local server inventory (ignored by Git)
   loader.py             YAML loader with Pydantic validation
 models/
   config_models.py      Pydantic models: WebsiteServer, AppConfig, ServerType
+  onboarding.py         Pydantic onboarding and social-link models
+frontend/onboarding/    React onboarding wizard source and component tests
 tests/
   conftest.py           Shared pytest fixtures
   unit/                 Unit tests
+package.json            React build/test and Sass build/watch commands
+AGENTS.md               Repository-specific coding instructions
 ```

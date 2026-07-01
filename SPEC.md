@@ -16,7 +16,7 @@ The product is an engineering-grade, managed website service built exclusively f
 - **User ID:** AWG's internal identifier for a user account. It is a randomly generated, non-sequential UUID and is not an email address or other personally identifiable information.
 - **Onboarding:** The public, single-page form where an end user supplies author, book, branding, and related website metadata and clicks the button to generate an author website. In this codebase, onboarding does not mean account registration, payment setup, or an internal administrative process.
 - **Website generation:** Transforming validated onboarding data into the complete website code and assets needed for an AWG preview. Generation does not create production infrastructure or deploy a live WordPress site.
-- **Generated-site preview:** The generated website as viewed inside AWG at `/site/<site_id>`. A preview is not a production WordPress installation.
+- **Generated-site preview:** The generated website as viewed inside AWG at `/sites/<site_id>`. A preview is not a production WordPress installation.
 - **Production author website:** The independent WordPress/PHP website created for an author on production hosting. It is separate from AWG and from the generated-site preview.
 - **Provisioning:** Creating and configuring the production infrastructure and WordPress installation for an author website, including hosting, WordPress setup, DNS, and SSL.
 - **Provisioning pipeline:** The ordered, automated production-provisioning workflow documented in [PIPELINE.md](PIPELINE.md). The pipeline is distinct from website generation.
@@ -113,45 +113,53 @@ Python / Django 5.2 LTS
 
 ---
 
-## Onboarding Form — Inputs
+## Current Milestone Onboarding Form — Inputs
 
-The generator is triggered by the public, single-page onboarding form. Fields:
+For a specific feature, [FEATURES.md](FEATURES.md) is authoritative. The current
+React onboarding wizard collects one answer at a time for a brand-new site. It
+does not ask for an existing WordPress site, WordPress credentials, hosting,
+DNS, or migration information.
 
 ### Client Identity
 - Author name (as it appears publicly)
 - Author email address
-- WordPress admin username
-- WordPress admin password
 
 ### Site Identity
-- Site/domain name (e.g. `janedoeauthor.com`)
+- Website name
 - Site tagline / author bio one-liner
 - Author short bio (paragraph, shown in About section)
 - Author long bio (optional, for full About page)
-- Author headshot (image upload)
 
 ### Genre & Branding
 - Genre(s) — multi-select or free text
 - Primary brand color (hex)
 - Secondary brand color (hex)
-- Divi template selection — dropdown of available starter templates
-
-### Book Portfolio
-- Book title(s) — repeatable field (title, cover image, description, buy links)
 
 ### Social & Marketing
 - Newsletter signup link or Kit form ID
 - Social media links (Twitter/X, Instagram, Facebook, TikTok, YouTube — all optional)
 
-### Domain & DNS
+Book entries, headshots, and template selection are added by later Milestone 1
+features.
+
+## Aspirational Production Onboarding Inputs
+
+Future production provisioning may additionally collect:
+
+- WordPress admin username and password for the newly created site
+- Author headshot and book portfolio
+- Divi template selection
 - Domain name (for Cloudways app configuration and Cloudflare DNS record)
-- Confirm: nameservers already pointed to Cloudflare? (checkbox)
+- Confirmation that nameservers point to Cloudflare
 
 ---
 
-## Onboarding Flow: Intake to Live Site
+## Future Production Flow: Intake to Live Site
 
-> Scope: v1. No maintenance. Pure site generation from form inputs.
+> This flow is aspirational and is not the current Milestone 1 implementation.
+> Milestone 1 generates standard, non-ecommerce author websites only. After generation,
+> each site is persisted under a unique ID and can be visited at
+> `/sites/<site_id>` inside AWG. Ecommerce generation is deferred.
 
 ```
 Client/Levi fills out onboarding form and submits

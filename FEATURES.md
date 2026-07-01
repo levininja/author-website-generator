@@ -16,35 +16,20 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task.
 
 ## Doing
 
-### F001 — Fill out the client onboarding form
-
-**Type:** Feature
-**As** an end user, I can fill out a single-page form with all author details so AWG has everything needed to generate and preview a site.
-
-- **Client Identity fields:** author name (as it appears publicly), author email
-- **Site Identity fields:** website name, site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
-- **Genre & Branding fields:** genre(s) — multi-select or free text; primary brand color (hex); secondary brand color (hex)
-- **Social & Marketing fields:** newsletter signup link or Kit form ID; Twitter/X, Instagram, Facebook, TikTok, YouTube (all optional)
-- Client-side required-field validation before submission is allowed
-- Hex color validation and URL validation on social link fields
-- Files: `models/onboarding.py` (Pydantic models: `BookEntry`, `SocialLinks`, `OnboardingForm`), `tests/unit/test_onboarding_models.py`, `onboarding/templates/onboarding/onboard.html`, `onboarding/static/onboarding/style.css`, `onboarding/static/onboarding/onboard.js`
-- Tests: valid input passes, required fields enforced, hex color validation, URL validation on social links
-- **Human prerequisite:** Levi must sign off on the field list before this is built — any missing fields discovered after this ships require retroactive changes across models, form HTML, and orchestrator
-
-**Dev note:** The form HTML and client-side JS scaffolding already exist in `onboarding/templates/onboarding/onboard.html` and `onboarding/static/onboarding/onboard.js`. Remaining work for this feature: Pydantic models in `models/onboarding.py`, server-side validation on `POST /generate`, and the test file `tests/unit/test_onboarding_models.py`.
-
 ---
 
-## Milestone 1
+## Milestone 1 Epic — Generate and Preview a Standard Author Website
 
-Milestone 1 is v1 of the product: a user can complete the single-page author
-website form, submit it, and have AWG generate the full code for a new author
-website. Each generated site receives a unique ID and can be viewed inside the
-AWG application at `/site/<site_id>`.
+Milestone 1 is v1 of the product for standard, non-ecommerce author websites:
+a user can complete the single-page author website form, submit it, and have
+AWG generate the complete site. Each generated site is persisted with a unique
+ID and is immediately visitable inside the AWG application at
+`/sites/<site_id>`.
 
 Milestone 1 stops at generation and preview. It does not include payments,
 billing, website maintenance, admin pages, production deployment, customer
-domains, DNS, SSL, or production hosting.
+domains, DNS, SSL, production hosting, ecommerce features, shopping carts, or
+payment processing.
 
 ---
 
@@ -93,6 +78,7 @@ domains, DNS, SSL, or production hosting.
 **Type:** Feature
 **As** an end user, I want my submitted form data turned into a complete author website so that I can review the generated result.
 
+- Milestone 1 generation supports standard, non-ecommerce author websites only
 - `generate_site(form)` validates the submitted onboarding data and generates the full website code, including all pages, content, styling, and assets required for the preview
 - Generation uses the selected template and applies the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
 - The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
@@ -102,12 +88,27 @@ domains, DNS, SSL, or production hosting.
 
 ---
 
+### F020 — Store and preview each generated website
+
+**Type:** Feature
+**As** an end user, I can view the website generated from my submission on a newly created AWG page.
+
+- After successful generation, create a cryptographically random, URL-safe unique site ID
+- Persist the complete generated code and the metadata required to serve it, keyed by site ID
+- `GET /sites/<site_id>` renders the generated website within AWG; it is a preview, not a production deployment or customer hosting environment
+- Unknown or malformed IDs return 404 without exposing storage paths or other site records
+- A successful response from `POST /generate` includes the site ID and `/sites/<site_id>` URL
+- Site creation is atomic: a preview becomes addressable only after all generated code has been written successfully
+- Tests cover unique ID creation, persistence, successful preview rendering, missing IDs, malformed IDs, and incomplete-write cleanup
+
+---
+
 ### F007 — Get a clear result — site URL on success, specific error on failure
 
 **Type:** Feature
 **As** an end user, when generation completes I can open the generated website, and if it fails I see a human-readable error message.
 
-- On success: redirect to or display a link to `/site/<site_id>`
+- On success: redirect to or display a link to `/sites/<site_id>`
 - On failure: show a specific, actionable error plus a dismiss button
 - No internal exception details or stack traces are exposed to the user
 - Error display persists until the user dismisses it via X or resubmits
@@ -128,27 +129,12 @@ domains, DNS, SSL, or production hosting.
 
 ---
 
-### F020 — Store and preview each generated website
-
-**Type:** Feature
-**As** an end user, I can view the website generated from my submission on a newly created AWG page.
-
-- After successful generation, create a cryptographically random, URL-safe unique site ID
-- Persist the complete generated code and the metadata required to serve it, keyed by site ID
-- `GET /site/<site_id>` renders the generated website within AWG; it is a preview, not a production deployment or customer hosting environment
-- Unknown or malformed IDs return 404 without exposing storage paths or other site records
-- A successful response from `POST /generate` includes the site ID and `/site/<site_id>` URL
-- Site creation is atomic: a preview becomes addressable only after all generated code has been written successfully
-- Tests cover unique ID creation, persistence, successful preview rendering, missing IDs, malformed IDs, and incomplete-write cleanup
-
----
-
 ## Backlog
 
 ---
 
 The backlog contains work that is useful after Milestone 1 but is not required
-to generate and preview a website inside AWG.
+to generate and preview a standard, non-ecommerce website inside AWG.
 
 ### R001 — Document Divi option keys for production site configuration
 
@@ -276,6 +262,28 @@ administrative pages must be separately authenticated and authorized.
 ---
 
 ## Done
+
+---
+
+### F001 — Fill out the client onboarding form
+
+**Type:** Feature
+**As** an end user, I can fill out a single-page form with all author details so AWG has everything needed to generate and preview a site.
+
+- **Client Identity fields:** author name (as it appears publicly), author email
+- **Site Identity fields:** website name, site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
+- **Genre & Branding fields:** genre(s) — multi-select or free text; primary brand color (hex); secondary brand color (hex)
+- **Social & Marketing fields:** newsletter signup link or Kit form ID; Twitter/X, Instagram, Facebook, TikTok, YouTube (all optional)
+- Client-side required-field validation before submission is allowed
+- Hex color validation and URL validation on social link fields
+- Files: `models/onboarding.py` (Pydantic models: `BookEntry`, `SocialLinks`, `OnboardingForm`), `tests/unit/test_onboarding_models.py`, `onboarding/templates/onboarding/onboard.html`, `onboarding/static/onboarding/style.scss` (source), `onboarding/static/onboarding/style.css` (generated), `onboarding/static/onboarding/onboard.js`
+- Tests: valid input passes, required fields enforced, hex color validation, URL validation on social links
+- **Human prerequisite:** Levi must sign off on the field list before this is built — any missing fields discovered after this ships require retroactive changes across models, form HTML, and orchestrator
+
+**Implementation note:** React presents one question at a time and submits JSON
+to Django. Only author name, author email, and website name are required; other
+F001 inputs are optional and validated when supplied. Production provisioning
+and existing WordPress site fields are intentionally excluded.
 
 ---
 

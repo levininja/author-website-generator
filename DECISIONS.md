@@ -1,5 +1,7 @@
 # Author Website Generator — Product Decisions
 
+Decision: We do not use decision numbers in this file.
+
 Related documents: [README](README.md) · [Product spec](SPEC.md) · [Feature list](FEATURES.md) · [Provisioning pipeline](PIPELINE.md)
 
 This file records the product's strategic decisions and their primary rationale.
@@ -87,4 +89,7 @@ AWG uses React for a two-part frontend application backed by Django:
 
 React is appropriate for the shared state and interactive workflow across these stages, while Django remains responsible for backend validation, persistence, and generation.
 
-Whether onboarding uses a wizard or one complete form is not yet decided. A possible third React stage for viewing the generated website is also deferred; the preview may instead be rendered or served outside the React application.
+Onboarding uses a wizard that asks one question at a time, retains answers when
+the user navigates backward, and provides a final review before submission. A
+possible third React stage for viewing the generated website is deferred; the
+preview may instead be rendered or served outside the React application.
