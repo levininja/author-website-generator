@@ -1,0 +1,241 @@
+{
+  "Fiction": {
+    "Action & Adventure": [
+      "Survival Stories",
+      "Sea & Maritime Adventure",
+      "War & Military Adventure",
+      "Quest / Journey / Expedition",
+      "Espionage & Spy Adventure",
+      "Heist / Caper Adventure"
+    ],
+    "Crime": [
+      "Cozy Mystery",
+      "Hard-Boiled Detective",
+      "Police Procedural",
+      "Amateur Sleuth",
+      "Legal / Courtroom Drama",
+      "Historical Mystery",
+      "Noir",
+      "Neo-Noir"
+    ],
+    "Fantasy": [
+      "Epic Fantasy",
+      "Urban Fantasy",
+      "Grimdark",
+      "Sword and Sorcery",
+      "Portal Fantasy",
+      "Low Fantasy",
+      "Magical Realism",
+      "Romantasy",
+      "Fairy Tale Retellings",
+      "Mythic Fantasy"
+    ],
+    "Historical Fiction": [
+      "Ancient World",
+      "Medieval",
+      "Renaissance",
+      "Regency",
+      "Victorian",
+      "World War I",
+      "World War II",
+      "20th Century",
+      "Colonial History",
+      "Civil War History",
+      "Frontier History",
+      "Biographical Historical Fiction"
+    ],
+    "Horror": [
+      "Psychological Horror",
+      "Supernatural & Paranormal Horror",
+      "Gothic Horror",
+      "Cosmic / Lovecraftian Horror",
+      "Folk Horror",
+      "Body Horror / Splatter",
+      "Haunted House / Ghost Stories"
+    ],
+    "Literary Fiction": [
+      "General Literary Fiction",
+      "Experimental & Avant-Garde",
+      "Social Realism & Commentary",
+      "Coming-of-Age Literary"
+    ],
+    "Romance": [
+      "Contemporary Romance",
+      "Historical Romance",
+      "Paranormal Romance",
+      "Romantic Suspense",
+      "Erotic Romance",
+      "Regency Romance",
+      "New Adult Romance",
+      "LGBTQ+ Romance"
+    ],
+    "Science Fiction": [
+      "Cyberpunk",
+      "Space Opera",
+      "Dystopia",
+      "Post-Apocalyptic",
+      "Hard Science Fiction",
+      "Military Science Fiction",
+      "Time Travel",
+      "Alternate History",
+      "Steampunk",
+      "Solarpunk / Hopepunk",
+      "Soft / Sociological Science Fiction"
+    ],
+    "Thriller & Suspense": [
+      "Psychological Thriller",
+      "Legal Thriller",
+      "Political / Espionage Thriller",
+      "Medical / Forensic Thriller",
+      "Techno-Thriller",
+      "Domestic / Family Thriller",
+      "Action & Adventure Thriller"
+    ],
+    "Western": [
+      "Traditional Western",
+      "Revisionist Western",
+      "Weird West / Horror Western",
+      "Romance Western",
+      "Modern Western"
+    ],
+    "Women's Fiction": [
+      "Contemporary Women's Fiction",
+      "Historical Women's Fiction",
+      "Relationship & Family Fiction",
+      "Inspirational / Uplifting Women's Fiction"
+    ],
+    "Young Adult Fiction": [
+      "YA Contemporary / Coming-of-Age",
+      "YA Fantasy",
+      "YA Science Fiction & Dystopian",
+      "YA Mystery & Thriller",
+      "YA Romance",
+      "YA Historical Fiction"
+    ]
+  },
+  "Nonfiction": {
+    "Biography": [
+      "Celebrity & Entertainment Biography",
+      "Political & Historical Biography",
+      "Business Leader Biography"
+    ],
+    "Memoir": [
+      "Travel Memoir & Adventure",
+      "Personal Essays & Memoir"
+    ],
+    "Business & Economics": [
+      "Entrepreneurship & Startups",
+      "Personal Finance & Investing",
+      "Leadership, Management & Corporate Culture",
+      "Economics & Economic History",
+      "Marketing, Sales & Branding",
+      "Career Development & Job Hunting"
+    ],
+    "Food, Cooking, Wine & Spirits": [
+      "Cookbooks & Recipes",
+      "Food Memoirs & Essays",
+      "Wine, Beer & Spirits",
+      "Baking & Desserts",
+      "Regional & International Cuisine",
+      "Nutrition, Diet & Healthy Cooking"
+    ],
+    "Health, Fitness & Wellness": [
+      "Diet, Nutrition & Weight Management",
+      "Exercise, Fitness & Training",
+      "Mental Health & Psychology",
+      "Mindfulness, Meditation & Yoga",
+      "Holistic, Alternative & Integrative Health",
+      "Sleep, Stress & Recovery"
+    ],
+    "History": [
+      "Ancient History",
+      "Medieval & Early Modern History",
+      "Modern History (18th-21st Century)",
+      "Military History & Warfare",
+      "Social, Cultural & Intellectual History",
+      "Regional & National History",
+      "Historiography & Historical Method"
+    ],
+    "Philosophy": [
+      "Ancient & Classical Philosophy",
+      "Modern & Contemporary Philosophy",
+      "Ethics, Morality & Values",
+      "Political Philosophy & Ideology",
+      "Eastern Philosophy",
+      "Philosophy of Mind, Science & Language"
+    ],
+    "Politics, Government & Current Affairs": [
+      "Political Science & Theory",
+      "Current Events & Journalism",
+      "International Relations & Geopolitics",
+      "Social Justice, Activism & Inequality",
+      "Government Policy & Public Administration",
+      "Elections, Democracy & Political Systems"
+    ],
+    "Religion & Spirituality": [
+      "Christianity & Theology",
+      "Buddhism, Hinduism & Eastern Traditions",
+      "Islam, Judaism & Abrahamic Faiths",
+      "New Age, Metaphysical & Occult",
+      "Atheism, Agnosticism & Secularism",
+      "Inspirational, Devotional & Prayer",
+      "Comparative Religion & Mythology"
+    ],
+    "Science, Nature & Technology": [
+      "Popular Science & Science Writing",
+      "Biology, Evolution & Life Sciences",
+      "Physics, Astronomy & Cosmology",
+      "Climate Change, Environment & Ecology",
+      "Technology, AI & Digital Innovation",
+      "Mathematics & Statistics",
+      "Anthropology, Sociology & Psychology (Popular)"
+    ],
+    "Self-Help & Personal Development": [
+      "Productivity, Habits & Time Management",
+      "Relationships, Communication & Dating",
+      "Mindset, Motivation & Success",
+      "Emotional Intelligence & Mental Strength",
+      "Career, Leadership & Professional Growth",
+      "Parenting, Family & Education"
+    ],
+    "True Crime": [
+      "Serial Killers & Notorious Crimes",
+      "Cold Cases & Unsolved Mysteries",
+      "Heists, Frauds & Financial Crimes",
+      "Organized Crime, Gangs & Mafia",
+      "Forensic Science, Investigation & Detection",
+      "Wrongful Convictions & Justice System"
+    ],
+    "Travel & Places": [
+      "Travel Memoirs & Personal Journeys",
+      "Travel Guides & Practical Advice",
+      "Adventure, Exploration & Extreme Travel",
+      "Cultural Immersion & Ethnography",
+      "Nature, Wildlife & Eco-Travel",
+      "Food & Culinary Travel"
+    ],
+    "Art, Architecture, Design & Photography": [
+      "Art History & Criticism",
+      "Artist & Photographer Biographies / Monographs",
+      "Architecture & Urban Design",
+      "Graphic Design, Illustration & Comics",
+      "Photography Technique & Coffee Table Books",
+      "Fashion & Interior Design"
+    ],
+    "Sports & Recreation": [
+      "Sports Biographies & Memoirs",
+      "Sports History & Culture",
+      "Coaching, Training & Performance",
+      "Outdoor Recreation, Hiking & Adventure Sports",
+      "Team Sports & Specific Games"
+    ],
+    "Essays, Literary Nonfiction & Humor": [
+      "Personal Essays & Creative Nonfiction",
+      "Literary Criticism & Theory",
+      "Cultural Criticism & Commentary",
+      "Nature Writing & Environmental Essays",
+      "Humor, Satire & Comedy Essays",
+      "Memoir-in-Essays Hybrids"
+    ]
+  }
+}

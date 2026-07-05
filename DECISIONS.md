@@ -89,7 +89,49 @@ AWG uses React for a two-part frontend application backed by Django:
 
 React is appropriate for the shared state and interactive workflow across these stages, while Django remains responsible for backend validation, persistence, and generation.
 
-Onboarding uses a wizard that asks one question at a time, retains answers when
-the user navigates backward, and provides a final review before submission. A
-possible third React stage for viewing the generated website is deferred; the
-preview may instead be rendered or served outside the React application.
+Onboarding uses a wizard that asks one question at a time and retains answers
+when the user navigates backward. Completing the survey atomically persists the
+validated author and books before showing a read-only review. The review reloads
+the author and book resources from the database to verify persistence; its Back
+button returns to the survey, and its Generate button calls the generation
+endpoint. Website generation is a later feature.
+
+Related answers may share one wizard page when separating them would make the
+workflow less usable. Brand colors and social profiles are grouped pages.
+Genres are seeded from the required three-level `genres.json` catalog into
+normalized category, genre, and subgenre tables rooted at Fiction and
+Nonfiction. Runtime author and book selections use those database tables as the
+shared taxonomy.
+
+---
+
+## Uploaded media uses Django FileField storage
+
+Database models use Django `FileField` values as durable references to uploaded
+images and PDFs. In local development, Django stores the bytes beneath the
+repository's ignored `media/` directory and serves them from `/media/`. In
+production, the same fields use Cloudflare R2 as the storage backend and a
+normal Cloudflare CDN custom domain for retrieval. Database records store
+storage object keys rather than environment-specific URLs, so the data model
+and application logic remain the same across environments.
+
+Uploaded objects use generated paths and randomized filenames rather than
+user-controlled storage paths. R2 credentials and bucket configuration are
+environment variables and are never committed.
+
+---
+
+## Database tables use semantic names
+
+AWG deliberately overrides Django's default `<app_label>_<model_name>` table
+naming convention. Application ownership is an implementation detail and does
+not define the business meaning of stored data, so tables use explicit,
+domain-oriented names such as `author`, `book`, `book_series`, `genre`,
+`author_billing`, and `author_shipping`.
+
+Every AWG domain model in the onboarding data model declares its table name
+explicitly through `Meta.db_table`. Related tables use the owning domain as a
+prefix, such as `book_award`, `book_review`, and `author_genre`. This
+produces clearer raw SQL and keeps database names stable if Django app
+boundaries change. Django framework and authentication tables retain their
+framework-managed names.

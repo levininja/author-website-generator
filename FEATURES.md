@@ -18,6 +18,13 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task.
 
 ---
 
+
+
+
+
+
+---
+
 ## Milestone 1 Epic — Generate and Preview a Standard Author Website
 
 Milestone 1 is v1 of the product for standard, non-ecommerce author websites:
@@ -30,33 +37,6 @@ Milestone 1 stops at generation and preview. It does not include payments,
 billing, website maintenance, admin pages, production deployment, customer
 domains, DNS, SSL, production hosting, ecommerce features, shopping carts, or
 payment processing.
-
----
-
-### F002 — Build the client's book portfolio in the form
-
-**Type:** Feature
-**As** an end user, I can add multiple books to the form and add or remove book entries dynamically without reloading the page.
-
-- Each book entry: title, cover image upload, description, buy links
-- Add/remove rows handled client-side by `onboarding/static/onboarding/onboard.js` — no page reload
-- Book entries modeled as a list of `BookEntry` in `OnboardingForm`
-- Book data is passed to F005 and rendered into the generated website
-
-**Dev note:** Dynamic add/remove book row UI is already implemented in `onboarding/static/onboarding/onboard.js` and `onboarding/templates/onboarding/onboard.html`. Remaining work: `BookEntry` Pydantic model in `models/onboarding.py` and wiring book data into the generation pipeline.
-
----
-
-### F003 — Upload the author's headshot in the form
-
-**Type:** Feature
-**As** an end user, I can upload an image file directly in the form so it gets placed on the generated site's About section automatically.
-
-- Image upload field in the onboarding form
-- Validate the file type and size before generation
-- Headshot is copied into the generated site's assets and rendered in its About section
-
-**Dev note:** The headshot file input already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: server-side file handling, size/type validation, and integration with site generation.
 
 ---
 
@@ -83,7 +63,7 @@ payment processing.
 - Generation uses the selected template and applies the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
 - The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
 - Generation failures return a safe, human-readable error and do not create a partial site record
-- Files: `generator.py`, `tests/unit/test_generator.py`
+- Files: `generator/site_generation.py`, `tests/unit/test_site_generation.py`
 - Tests: complete generation, optional-field handling, invalid input, template/content mapping, and generation failure
 
 ---
@@ -263,27 +243,6 @@ administrative pages must be separately authenticated and authorized.
 
 ## Done
 
----
-
-### F001 — Fill out the client onboarding form
-
-**Type:** Feature
-**As** an end user, I can fill out a single-page form with all author details so AWG has everything needed to generate and preview a site.
-
-- **Client Identity fields:** author name (as it appears publicly), author email
-- **Site Identity fields:** website name, site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
-- **Genre & Branding fields:** genre(s) — multi-select or free text; primary brand color (hex); secondary brand color (hex)
-- **Social & Marketing fields:** newsletter signup link or Kit form ID; Twitter/X, Instagram, Facebook, TikTok, YouTube (all optional)
-- Client-side required-field validation before submission is allowed
-- Hex color validation and URL validation on social link fields
-- Files: `models/onboarding.py` (Pydantic models: `BookEntry`, `SocialLinks`, `OnboardingForm`), `tests/unit/test_onboarding_models.py`, `onboarding/templates/onboarding/onboard.html`, `onboarding/static/onboarding/style.scss` (source), `onboarding/static/onboarding/style.css` (generated), `onboarding/static/onboarding/onboard.js`
-- Tests: valid input passes, required fields enforced, hex color validation, URL validation on social links
-- **Human prerequisite:** Levi must sign off on the field list before this is built — any missing fields discovered after this ships require retroactive changes across models, form HTML, and orchestrator
-
-**Implementation note:** React presents one question at a time and submits JSON
-to Django. Only author name, author email, and website name are required; other
-F001 inputs are optional and validated when supplied. Production provisioning
-and existing WordPress site fields are intentionally excluded.
 
 ---
 
@@ -292,7 +251,7 @@ and existing WordPress site fields are intentionally excluded.
 **Type:** Feature
 **As** a developer, I have a working Django project structure to build on.
 
-- Django 5.2 LTS project package in `awg/` with settings, URL conf, WSGI, and ASGI entrypoints
+- Django 5.2 LTS project package in `generator/` with settings, URL conf, WSGI, and ASGI entrypoints
 - Custom `User` model in `accounts/` extending `AbstractUser` with a UUID v4 primary key (`AUTH_USER_MODEL = "accounts.User"`)
 - `onboarding/` Django app with `GET /onboard`, `POST /generate` (stub), and `/` → `/onboard` redirect
 - Django-namespaced templates in `onboarding/templates/onboarding/` and statics in `onboarding/static/onboarding/`
@@ -312,3 +271,120 @@ and existing WordPress site fields are intentionally excluded.
 - `models/config_models.py` — `WebsiteServer` and `AppConfig` Pydantic models; `ServerType` enum with `standard` and `ecommerce` values
 - `config/loader.py` — `load_config(path)` parses and validates the YAML; raises `ConfigError` on missing file or invalid schema
 - 7 unit tests in `tests/unit/test_config_loader.py`
+
+### F003 — Upload the author's headshot in the form
+
+**Type:** Feature
+**As** an end user, I can upload an image file directly in the form so it gets placed on the generated site's About section automatically.
+
+- Image upload field in the onboarding form
+- Validate the file type and size before generation
+- Headshot is copied into the generated site's assets and rendered in its About section
+
+**Dev note:** The headshot file input already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: server-side file handling, size/type validation, and integration with site generation.
+
+---
+
+### F002 — Build the client's book portfolio in the form
+
+**Type:** Feature
+**Status:** Completed
+**As** an end user, I can add multiple books to the form and add or remove book entries dynamically without reloading the page.
+**Deliverable:** The database contains every submitted book field and a
+post-onboarding page reads those fields from the database and displays them.
+Uploaded images are displayed on the page, and each sample chapter PDF is
+available through a download link.
+**Deliverable:** After reviewing the database-loaded author and books, the user can
+click Generate and call `POST /generate` without error. F002 does not generate
+website code; the endpoint is intentionally a no-op until F005.
+
+- Each book requires title, cover image, description, at least one buy link,
+  category, genre, and standalone/series information; subgenre is optional
+- Category, genre, and subgenre occupy the first three positions of a
+  four-column classification row. A "Part of a series" checkbox follows on the
+  next row; series books require series name, book number, and total books,
+  with an optional series-complete checkbox
+- Optional repeatable editorial and reader reviews share one stored review
+  model. Editorial reviews identify the publication; reader reviews identify
+  the reviewer and may include credentials. Reviewer photos, star ratings, and
+  original-review links are optional. A review may also independently be
+  marked as a starred review; awards still require icons
+- Accept link fields with or without an HTTP scheme, require a valid public
+  domain suffix, and normalize bare domains to HTTPS before persistence
+- Optional reader-fit copy and sample chapter PDF
+- Add/remove rows handled client-side by `onboarding/static/onboarding/onboard.js` — no page reload
+- Book entries modeled as a list of `BookEntry` in `OnboardingForm`
+- Persist all validated book data in records associated with the author
+- Store normalized category, genre, and subgenre records in separate lookup
+  tables; books reference a genre ID and an optional subgenre ID
+- Store series in a separate table; series books reference it while standalone
+  books have no series
+- Store one-based onboarding order as `book.onboarding_position`
+- Store uploaded file metadata and durable storage references with the
+  corresponding book records; do not store temporary request objects
+- Persist book covers, reviewer photos, award icons, and sample chapter PDFs
+- Store each sample chapter's original uploaded filename separately from its
+  randomized storage key and use that filename when the PDF is downloaded
+- Accept JPG, PNG, and WebP images up to 10 MB per file
+- Accept PDF sample chapters up to 20 MB per file
+- Validate file content as well as file extension and declared MIME type
+- Use non-user-controlled storage paths and never expose filesystem paths
+- Save book records and file references atomically with F001; clean up written
+  files and database records if any part of the submission fails
+- Tests cover complete persistence, multiple books and nested files, accepted
+  image and PDF types, size/type rejection, missing files, atomic rollback, file
+  cleanup, the database-backed post-onboarding display and PDF download link,
+  and the callable no-op generation endpoint
+- The database-backed confirmation displays every user-facing book field,
+  including explicit empty or not-applicable states for optional content
+
+**Implementation note:** Dynamic book rows, nested content, dependent genre
+selection, multipart submission, image/PDF validation, and Pydantic models are
+implemented. `POST /onboarding` atomically persists the author and books;
+`GET /authors/<author_id>` and `GET /authors/<author_id>/books` reload the
+separate resources for review; and `POST /generate` currently verifies the
+author exists and returns success without generating anything. Passing saved
+book data through actual website generation remains part of F005.
+
+---
+
+### F001 — Fill out the client onboarding form
+
+**Type:** Feature
+**As** an end user, I can fill out a single-page form with all author details so AWG has everything needed to generate and preview a site.
+
+**Deliverable:** The `author` table contains all submitted author onboarding
+information except the book fields, which are owned by F002.
+
+- **Client Identity fields:** author name (as it appears publicly), contact email
+- **Site Identity fields:** site domain, site tagline / author bio one-liner, author short bio (paragraph, shown in About section), author long bio (optional, for full About page)
+- **Genre & Branding fields:** autocomplete multi-select backed by normalized
+  category, genre, and subgenre tables seeded from `genres.json`; primary and
+  secondary brand colors selected together
+- **Social & Marketing fields:** newsletter signup link or Kit form ID; Twitter/X, Instagram, Facebook, TikTok, YouTube, Goodreads (all optional)
+- Client-side required-field validation before submission is allowed
+- Hex color validation and URL validation on social link fields
+- Persist the complete validated non-book `OnboardingForm` data in database
+  records only after the complete submission passes validation
+- Invalid submissions and failed persistence operations do not retain partial
+  F001 database records
+- Files: `models/onboarding.py`, `onboarding/models.py`,
+  `onboarding/services.py`,
+  `onboarding/migrations/0001_semantic_domain_schema.py`,
+  `onboarding/migrations/0002_seed_genre_catalog.py`,
+  `frontend/onboarding/App.jsx`, `tests/unit/test_onboarding_models.py`,
+  `tests/unit/test_onboarding_persistence.py`, and
+  `tests/unit/test_django_views.py`
+- Tests: valid input passes, required fields enforced, hex color validation, URL
+  validation on social links, complete non-book persistence, and atomic rollback
+- **Human prerequisite:** Levi must sign off on the field list before this is built — any missing fields discovered after this ships require retroactive changes across models, form HTML, and orchestrator
+
+**Implementation note:** React presents one question at a time, groups related
+color and social inputs, and submits multipart form data to Django. Author name,
+contact email, site domain, at least one genre, and at least one complete book
+are required. Production provisioning and existing WordPress site fields are
+intentionally excluded. Author genres use a searchable autocomplete with
+hierarchy paths and removable selections rather than a full checkbox list.
+Successful onboarding stores F001 fields under an author UUID and preserves
+author genre selection order through category-, genre-, and subgenre-selection
+tables. Book records and uploaded files remain F002.

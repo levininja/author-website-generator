@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,6 +19,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
+    "django.contrib.staticfiles",
     "accounts",
     "onboarding",
 ]
@@ -29,7 +31,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "awg.urls"
+ROOT_URLCONF = "generator.urls"
 
 TEMPLATES = [
     {
@@ -44,7 +46,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "awg.wsgi.application"
+WSGI_APPLICATION = "generator.wsgi.application"
 
 DATABASES = {
     "default": {
@@ -56,5 +58,40 @@ DATABASES = {
 AUTH_USER_MODEL = "accounts.User"
 
 STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(BASE_DIR) / "media"
+
+R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "")
+if R2_BUCKET_NAME:
+    R2_ACCOUNT_ID = os.environ["R2_ACCOUNT_ID"]
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": os.environ["R2_ACCESS_KEY_ID"],
+                "secret_key": os.environ["R2_SECRET_ACCESS_KEY"],
+                "bucket_name": R2_BUCKET_NAME,
+                "endpoint_url": (
+                    f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+                ),
+                "custom_domain": os.environ["R2_CUSTOM_DOMAIN"],
+                "default_acl": None,
+                "querystring_auth": False,
+                "file_overwrite": False,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

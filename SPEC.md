@@ -122,25 +122,32 @@ DNS, or migration information.
 
 ### Client Identity
 - Author name (as it appears publicly)
-- Author email address
+- Contact email address used as the destination for reader contact-form messages
 
 ### Site Identity
-- Website name
+- Site domain (purchased or aspirational)
 - Site tagline / author bio one-liner
 - Author short bio (paragraph, shown in About section)
 - Author long bio (optional, for full About page)
 
 ### Genre & Branding
-- Genre(s) — multi-select or free text
-- Primary brand color (hex)
-- Secondary brand color (hex)
+- Genre(s) selected through autocomplete backed by the three-level
+  `genres.json` hierarchy
+- Primary and secondary brand colors selected together
+
+### Book Portfolio
+- At least one book is required
+- Required per book: title, cover, description, buy link, category, genre,
+  subgenre, and standalone/series information
+- Optional per book: editorial reviews, endorsements, reader review excerpts,
+  awards, reader-fit copy, and sample chapter PDF
 
 ### Social & Marketing
 - Newsletter signup link or Kit form ID
-- Social media links (Twitter/X, Instagram, Facebook, TikTok, YouTube — all optional)
+- Social media links (Twitter/X, Instagram, Facebook, TikTok, YouTube,
+  Goodreads — all optional and collected together)
 
-Book entries, headshots, and template selection are added by later Milestone 1
-features.
+Headshots and template selection are added by later Milestone 1 features.
 
 ## Aspirational Production Onboarding Inputs
 

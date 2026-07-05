@@ -21,6 +21,11 @@ Edit `.env` and set:
 - `DJANGO_DEBUG` — `true` for local development, `false` in production
 - `DJANGO_ALLOWED_HOSTS` — comma-separated hostnames (e.g. `localhost,127.0.0.1`)
 
+Local uploads are stored in the ignored `media/` directory. Production uses
+Cloudflare R2 when `R2_BUCKET_NAME` and the other `R2_*` variables documented
+in `.env.example` are configured; `R2_CUSTOM_DOMAIN` is the normal Cloudflare
+CDN hostname used to retrieve stored media.
+
 **3. Run migrations**
 ```bash
 python manage.py migrate
@@ -33,6 +38,15 @@ python manage.py runserver
 ```
 
 The app runs on `http://localhost:8000` by default. Navigate to `/onboard` to open the form. No login is required.
+
+### Genre catalog
+
+`onboarding/static/genres.json` is the source used by the genre-catalog data
+migration. Its three levels are `Fiction`/`Nonfiction`, genre, and subgenre.
+Runtime onboarding reads the normalized `genre_category`, `genre`, and
+`genre_subgenre` tables through `GET /genres`; it does not read the JSON file.
+Future catalog changes require a new data migration so deployed databases
+receive the same deterministic update.
 
 ## Stylesheets
 
@@ -66,7 +80,7 @@ npm run test:frontend
 ## Project structure
 ```
 manage.py               Django management entry point
-awg/                    Django project package
+generator/              Django project package
   settings.py           Environment-backed settings
   urls.py               Root URL configuration
   wsgi.py / asgi.py     WSGI and ASGI entrypoints
@@ -74,8 +88,11 @@ accounts/               Custom user model (UUID primary key)
   models.py             User extends AbstractUser with UUIDField pk
   migrations/           Database migrations
 onboarding/             Public onboarding app
-  views.py              GET /onboard, validated POST /generate, / redirect
+  models.py             Semantic author, book, series, genre, and content tables
+  services.py           Atomic onboarding persistence, cleanup, and resource serialization
+  views.py              Onboarding orchestration, author/book reads, and no-op generation
   urls.py               URL patterns for this app
+  migrations/           Submission and book persistence schema
   templates/onboarding/ Django-namespaced HTML templates
   static/onboarding/    Django-namespaced SCSS, generated CSS, and JS
 config/
