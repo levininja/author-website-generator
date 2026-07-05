@@ -556,6 +556,7 @@ function GenreStep({ selected, genreTree, error, onChange }) {
               {genre}
               <button
                 type="button"
+                data-testid={`remove-genre-${genre.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`}
                 onClick={() => remove(genre)}
                 aria-label={`Remove ${genre}`}
               >
@@ -569,6 +570,7 @@ function GenreStep({ selected, genreTree, error, onChange }) {
       <label htmlFor="genre-search">Search genres</label>
       <input
         id="genre-search"
+        data-testid="genre-search"
         type="search"
         role="combobox"
         autoComplete="off"
@@ -602,6 +604,7 @@ function GenreStep({ selected, genreTree, error, onChange }) {
               {matches.map((option, index) => (
                 <button
                   id={`genre-option-${index}`}
+                  data-testid={`genre-option-${index}`}
                   type="button"
                   role="option"
                   aria-label={`${option.path} — ${option.level}`}
@@ -641,12 +644,14 @@ function ColorField({ id, label, value, onChange }) {
         <div className="color-control-row">
           <input
             id={`${id}-picker`}
+            data-testid={`${id}-color-picker`}
             type="color"
             value={value}
             onChange={(event) => onChange(event.target.value)}
           />
           <input
             aria-label={`${label} hex value`}
+            data-testid={`${id}-color-hex`}
             type="text"
             value={value}
             pattern="^#[0-9a-fA-F]{6}$"
@@ -671,6 +676,7 @@ function SocialStep({ answers, onChange }) {
           <label htmlFor={field}>{label}</label>
           <input
             id={field}
+            data-testid={field}
             type="url"
             value={answers[field]}
             placeholder={`https://${field === "social_twitter" ? "x.com" : `${label.toLowerCase()}.com`}/…`}
@@ -705,6 +711,7 @@ function HeadshotStep({ value, onChange }) {
       </label>
       <input
         id="author-headshot"
+        data-testid="author-headshot"
         type="file"
         accept={IMAGE_TYPES.join(",")}
         onChange={(e) => onChange(e.target.files[0] || null)}
@@ -724,7 +731,15 @@ function HeadshotStep({ value, onChange }) {
 }
 
 
-function Repeater({ title, buttonLabel, items, emptyItem, onChange, renderItem }) {
+function Repeater({
+  title,
+  buttonLabel,
+  testIdPrefix,
+  items,
+  emptyItem,
+  onChange,
+  renderItem,
+}) {
   function add() {
     onChange([...items, { ...emptyItem }]);
   }
@@ -744,12 +759,22 @@ function Repeater({ title, buttonLabel, items, emptyItem, onChange, renderItem }
         <fieldset className="nested-item" key={index}>
           <legend>{title.replace(/s$/, "")} {index + 1}</legend>
           {renderItem(item, index, update)}
-          <button type="button" className="button-link danger-link" onClick={() => remove(index)}>
+          <button
+            type="button"
+            className="button-link danger-link"
+            data-testid={`${testIdPrefix}-${index}-remove`}
+            onClick={() => remove(index)}
+          >
             Remove
           </button>
         </fieldset>
       ))}
-      <button type="button" className="button-secondary compact-button" onClick={add}>
+      <button
+        type="button"
+        className="button-secondary compact-button"
+        data-testid={`${testIdPrefix}-add`}
+        onClick={add}
+      >
         + {buttonLabel}
       </button>
     </section>
@@ -787,6 +812,7 @@ function BookEntry({
         <button
           type="button"
           className="button-link danger-link book-remove"
+          data-testid={`${prefix}-remove`}
           onClick={onRemove}
           aria-label={`Remove book ${index + 1}`}
         >
@@ -797,12 +823,13 @@ function BookEntry({
       <div className="book-core-grid">
         <div className="field-stack">
           <label htmlFor={`${prefix}-title`}>Title</label>
-          <input id={`${prefix}-title`} required value={book.title} onChange={(e) => update("title", e.target.value)} />
+          <input id={`${prefix}-title`} data-testid={`${prefix}-title`} required value={book.title} onChange={(e) => update("title", e.target.value)} />
         </div>
         <div className="field-stack">
           <label htmlFor={`${prefix}-cover`}>Cover image</label>
           <input
             id={`${prefix}-cover`}
+            data-testid={`${prefix}-cover`}
             type="file"
             required
             accept={IMAGE_TYPES.join(",")}
@@ -812,12 +839,13 @@ function BookEntry({
         </div>
         <div className="field-stack full-width">
           <label htmlFor={`${prefix}-description`}>Description</label>
-          <textarea id={`${prefix}-description`} required rows={4} value={book.description} onChange={(e) => update("description", e.target.value)} />
+          <textarea id={`${prefix}-description`} data-testid={`${prefix}-description`} required rows={4} value={book.description} onChange={(e) => update("description", e.target.value)} />
         </div>
         <div className="field-stack full-width">
           <label htmlFor={`${prefix}-links`}>Buy links</label>
           <input
             id={`${prefix}-links`}
+            data-testid={`${prefix}-links`}
             required
             value={book.buy_links}
             placeholder="For example, amazon.com/book, barnesandnoble.com/book"
@@ -841,6 +869,7 @@ function BookEntry({
             <label htmlFor={`${prefix}-category`}>Category</label>
             <select
               id={`${prefix}-category`}
+              data-testid={`${prefix}-category`}
               required
               value={book.category}
               onChange={(e) => onChange({
@@ -858,6 +887,7 @@ function BookEntry({
             <label htmlFor={`${prefix}-genre`}>Genre</label>
             <select
               id={`${prefix}-genre`}
+              data-testid={`${prefix}-genre`}
               required
               value={book.genre}
               disabled={!book.category}
@@ -871,7 +901,7 @@ function BookEntry({
             <label htmlFor={`${prefix}-subgenre`}>
               Subgenre <span className="optional-label">(optional)</span>
             </label>
-            <select id={`${prefix}-subgenre`} value={book.subgenre} disabled={!book.genre} onChange={(e) => update("subgenre", e.target.value)}>
+            <select id={`${prefix}-subgenre`} data-testid={`${prefix}-subgenre`} value={book.subgenre} disabled={!book.genre} onChange={(e) => update("subgenre", e.target.value)}>
               <option value="">Select subgenre</option>
               {subgenres.map((subgenre) => <option key={subgenre}>{subgenre}</option>)}
             </select>
@@ -882,6 +912,7 @@ function BookEntry({
           <label htmlFor={`${prefix}-series-type`}>
             <input
               id={`${prefix}-series-type`}
+              data-testid={`${prefix}-series-type`}
               type="checkbox"
               checked={book.series_type === "series"}
               onChange={(e) => update(
@@ -896,20 +927,21 @@ function BookEntry({
           <>
             <div className="field-stack">
               <label htmlFor={`${prefix}-series-name`}>Series name</label>
-              <input id={`${prefix}-series-name`} required value={book.series_name} onChange={(e) => update("series_name", e.target.value)} />
+              <input id={`${prefix}-series-name`} data-testid={`${prefix}-series-name`} required value={book.series_name} onChange={(e) => update("series_name", e.target.value)} />
             </div>
             <div className="field-stack">
               <label htmlFor={`${prefix}-book-number`}>Book number</label>
-              <input id={`${prefix}-book-number`} type="number" min="1" required value={book.book_number} onChange={(e) => update("book_number", e.target.value)} />
+              <input id={`${prefix}-book-number`} data-testid={`${prefix}-book-number`} type="number" min="1" required value={book.book_number} onChange={(e) => update("book_number", e.target.value)} />
             </div>
             <div className="field-stack">
               <label htmlFor={`${prefix}-series-length`}>Total books</label>
-              <input id={`${prefix}-series-length`} type="number" min="1" required value={book.series_length} onChange={(e) => update("series_length", e.target.value)} />
+              <input id={`${prefix}-series-length`} data-testid={`${prefix}-series-length`} type="number" min="1" required value={book.series_length} onChange={(e) => update("series_length", e.target.value)} />
             </div>
             <div className="field-stack">
               <label htmlFor={`${prefix}-series-complete`}>
                 <input
                   id={`${prefix}-series-complete`}
+                  data-testid={`${prefix}-series-complete`}
                   type="checkbox"
                   checked={book.series_is_complete}
                   onChange={(e) => update("series_is_complete", e.target.checked)}
@@ -929,6 +961,7 @@ function BookEntry({
       <Repeater
         title="Editorial reviews"
         buttonLabel="Add editorial review"
+        testIdPrefix={`${prefix}-editorial`}
         items={book.editorial_reviews}
         emptyItem={{
           reviewer_name: "",
@@ -942,20 +975,20 @@ function BookEntry({
         renderItem={(item, itemIndex, change) => (
           <div className="nested-grid">
             <label htmlFor={`${prefix}-editorial-${itemIndex}-source`}>Publication name</label>
-            <input id={`${prefix}-editorial-${itemIndex}-source`} required value={item.reviewer_name} placeholder="For example, Kirkus Reviews" onChange={(e) => change(itemIndex, "reviewer_name", e.target.value)} />
+            <input id={`${prefix}-editorial-${itemIndex}-source`} data-testid={`${prefix}-editorial-${itemIndex}-source`} required value={item.reviewer_name} placeholder="For example, Kirkus Reviews" onChange={(e) => change(itemIndex, "reviewer_name", e.target.value)} />
             <label htmlFor={`${prefix}-editorial-${itemIndex}-quote`}>Review quotation</label>
-            <textarea id={`${prefix}-editorial-${itemIndex}-quote`} required value={item.quotation} placeholder="For example, A compelling and masterful novel." onChange={(e) => change(itemIndex, "quotation", e.target.value)} />
+            <textarea id={`${prefix}-editorial-${itemIndex}-quote`} data-testid={`${prefix}-editorial-${itemIndex}-quote`} required value={item.quotation} placeholder="For example, A compelling and masterful novel." onChange={(e) => change(itemIndex, "quotation", e.target.value)} />
             <label htmlFor={`${prefix}-editorial-${itemIndex}-url`}>Review URL (optional)</label>
-            <input id={`${prefix}-editorial-${itemIndex}-url`} type="text" value={item.original_review_url} placeholder="For example, kirkusreviews.com/review" onChange={(e) => change(itemIndex, "original_review_url", e.target.value)} />
+            <input id={`${prefix}-editorial-${itemIndex}-url`} data-testid={`${prefix}-editorial-${itemIndex}-url`} type="text" value={item.original_review_url} placeholder="For example, kirkusreviews.com/review" onChange={(e) => change(itemIndex, "original_review_url", e.target.value)} />
             <label htmlFor={`${prefix}-editorial-${itemIndex}-photo`}>Review photo (optional)</label>
-            <input id={`${prefix}-editorial-${itemIndex}-photo`} type="file" accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "photo", e.target.files[0] || null)} />
+            <input id={`${prefix}-editorial-${itemIndex}-photo`} data-testid={`${prefix}-editorial-${itemIndex}-photo`} type="file" accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "photo", e.target.files[0] || null)} />
             <label htmlFor={`${prefix}-editorial-${itemIndex}-stars`}>Star rating (optional)</label>
-            <select id={`${prefix}-editorial-${itemIndex}-stars`} value={item.stars} onChange={(e) => change(itemIndex, "stars", e.target.value)}>
+            <select id={`${prefix}-editorial-${itemIndex}-stars`} data-testid={`${prefix}-editorial-${itemIndex}-stars`} value={item.stars} onChange={(e) => change(itemIndex, "stars", e.target.value)}>
               <option value="">No star rating</option>
               {[1, 2, 3, 4, 5].map((stars) => <option key={stars} value={stars}>{stars} star{stars === 1 ? "" : "s"}</option>)}
             </select>
             <label htmlFor={`${prefix}-editorial-${itemIndex}-starred`}>
-              <input id={`${prefix}-editorial-${itemIndex}-starred`} type="checkbox" checked={item.is_starred_review} onChange={(e) => change(itemIndex, "is_starred_review", e.target.checked)} />
+              <input id={`${prefix}-editorial-${itemIndex}-starred`} data-testid={`${prefix}-editorial-${itemIndex}-starred`} type="checkbox" checked={item.is_starred_review} onChange={(e) => change(itemIndex, "is_starred_review", e.target.checked)} />
               Starred review (optional)
             </label>
           </div>
@@ -965,6 +998,7 @@ function BookEntry({
       <Repeater
         title="Reader reviews"
         buttonLabel="Add reader review"
+        testIdPrefix={`${prefix}-other`}
         items={book.other_reviews}
         emptyItem={{
           reviewer_name: "",
@@ -979,22 +1013,22 @@ function BookEntry({
         renderItem={(item, itemIndex, change) => (
           <div className="nested-grid">
             <label htmlFor={`${prefix}-other-${itemIndex}-name`}>Reviewer name</label>
-            <input id={`${prefix}-other-${itemIndex}-name`} required value={item.reviewer_name} placeholder="For example, Stephen King" onChange={(e) => change(itemIndex, "reviewer_name", e.target.value)} />
+            <input id={`${prefix}-other-${itemIndex}-name`} data-testid={`${prefix}-other-${itemIndex}-name`} required value={item.reviewer_name} placeholder="For example, Stephen King" onChange={(e) => change(itemIndex, "reviewer_name", e.target.value)} />
             <label htmlFor={`${prefix}-other-${itemIndex}-credentials`}>Reviewer credentials (optional)</label>
-            <input id={`${prefix}-other-${itemIndex}-credentials`} value={item.credentials} placeholder="For example, author of The Last Stand" onChange={(e) => change(itemIndex, "credentials", e.target.value)} />
+            <input id={`${prefix}-other-${itemIndex}-credentials`} data-testid={`${prefix}-other-${itemIndex}-credentials`} value={item.credentials} placeholder="For example, author of The Last Stand" onChange={(e) => change(itemIndex, "credentials", e.target.value)} />
             <label htmlFor={`${prefix}-other-${itemIndex}-quote`}>Review quotation</label>
-            <textarea id={`${prefix}-other-${itemIndex}-quote`} required value={item.quotation} placeholder="For example, I could not put this book down." onChange={(e) => change(itemIndex, "quotation", e.target.value)} />
+            <textarea id={`${prefix}-other-${itemIndex}-quote`} data-testid={`${prefix}-other-${itemIndex}-quote`} required value={item.quotation} placeholder="For example, I could not put this book down." onChange={(e) => change(itemIndex, "quotation", e.target.value)} />
             <label htmlFor={`${prefix}-other-${itemIndex}-url`}>Review URL (optional)</label>
-            <input id={`${prefix}-other-${itemIndex}-url`} type="text" value={item.original_review_url} placeholder="For example, goodreads.com/review" onChange={(e) => change(itemIndex, "original_review_url", e.target.value)} />
+            <input id={`${prefix}-other-${itemIndex}-url`} data-testid={`${prefix}-other-${itemIndex}-url`} type="text" value={item.original_review_url} placeholder="For example, goodreads.com/review" onChange={(e) => change(itemIndex, "original_review_url", e.target.value)} />
             <label htmlFor={`${prefix}-other-${itemIndex}-photo`}>Review photo (optional)</label>
-            <input id={`${prefix}-other-${itemIndex}-photo`} type="file" accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "photo", e.target.files[0] || null)} />
+            <input id={`${prefix}-other-${itemIndex}-photo`} data-testid={`${prefix}-other-${itemIndex}-photo`} type="file" accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "photo", e.target.files[0] || null)} />
             <label htmlFor={`${prefix}-other-${itemIndex}-stars`}>Star rating (optional)</label>
-            <select id={`${prefix}-other-${itemIndex}-stars`} value={item.stars} onChange={(e) => change(itemIndex, "stars", e.target.value)}>
+            <select id={`${prefix}-other-${itemIndex}-stars`} data-testid={`${prefix}-other-${itemIndex}-stars`} value={item.stars} onChange={(e) => change(itemIndex, "stars", e.target.value)}>
               <option value="">No star rating</option>
               {[1, 2, 3, 4, 5].map((stars) => <option key={stars} value={stars}>{stars} star{stars === 1 ? "" : "s"}</option>)}
             </select>
             <label htmlFor={`${prefix}-other-${itemIndex}-starred`}>
-              <input id={`${prefix}-other-${itemIndex}-starred`} type="checkbox" checked={item.is_starred_review} onChange={(e) => change(itemIndex, "is_starred_review", e.target.checked)} />
+              <input id={`${prefix}-other-${itemIndex}-starred`} data-testid={`${prefix}-other-${itemIndex}-starred`} type="checkbox" checked={item.is_starred_review} onChange={(e) => change(itemIndex, "is_starred_review", e.target.checked)} />
               Starred review (optional)
             </label>
           </div>
@@ -1004,15 +1038,16 @@ function BookEntry({
       <Repeater
         title="Awards"
         buttonLabel="Add award"
+        testIdPrefix={`${prefix}-award`}
         items={book.awards}
         emptyItem={{ name: "", icon: null }}
         onChange={(value) => update("awards", value)}
         renderItem={(item, itemIndex, change) => (
           <div className="nested-grid">
             <label htmlFor={`${prefix}-award-${itemIndex}-name`}>Award name</label>
-            <input id={`${prefix}-award-${itemIndex}-name`} required value={item.name} onChange={(e) => change(itemIndex, "name", e.target.value)} />
+            <input id={`${prefix}-award-${itemIndex}-name`} data-testid={`${prefix}-award-${itemIndex}-name`} required value={item.name} onChange={(e) => change(itemIndex, "name", e.target.value)} />
             <label htmlFor={`${prefix}-award-${itemIndex}-icon`}>Award icon</label>
-            <input id={`${prefix}-award-${itemIndex}-icon`} type="file" required accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "icon", e.target.files[0] || null)} />
+            <input id={`${prefix}-award-${itemIndex}-icon`} data-testid={`${prefix}-award-${itemIndex}-icon`} type="file" required accept={IMAGE_TYPES.join(",")} onChange={(e) => change(itemIndex, "icon", e.target.files[0] || null)} />
           </div>
         )}
       />
@@ -1020,15 +1055,15 @@ function BookEntry({
       <div className="book-core-grid optional-copy-grid">
         <div className="field-stack">
           <label htmlFor={`${prefix}-perfect-for`}>This is perfect for…</label>
-          <textarea id={`${prefix}-perfect-for`} value={book.perfect_for} onChange={(e) => update("perfect_for", e.target.value)} />
+          <textarea id={`${prefix}-perfect-for`} data-testid={`${prefix}-perfect-for`} value={book.perfect_for} onChange={(e) => update("perfect_for", e.target.value)} />
         </div>
         <div className="field-stack">
           <label htmlFor={`${prefix}-enjoy-if`}>You’ll enjoy this if…</label>
-          <textarea id={`${prefix}-enjoy-if`} value={book.enjoy_if} onChange={(e) => update("enjoy_if", e.target.value)} />
+          <textarea id={`${prefix}-enjoy-if`} data-testid={`${prefix}-enjoy-if`} value={book.enjoy_if} onChange={(e) => update("enjoy_if", e.target.value)} />
         </div>
         <div className="field-stack full-width">
           <label htmlFor={`${prefix}-sample`}>Sample chapter PDF</label>
-          <input id={`${prefix}-sample`} type="file" accept="application/pdf" onChange={(e) => update("sample_chapter", e.target.files[0] || null)} />
+          <input id={`${prefix}-sample`} data-testid={`${prefix}-sample`} type="file" accept="application/pdf" onChange={(e) => update("sample_chapter", e.target.files[0] || null)} />
           <span className="field-hint">PDF; maximum 20 MB.</span>
         </div>
       </div>
@@ -1063,7 +1098,7 @@ function BookPortfolioStep({
           onRemove={() => removeBook(index)}
         />
       ))}
-      <button type="button" className="button-secondary book-add" onClick={() => onChange([...books, emptyBook()])}>
+      <button type="button" className="button-secondary book-add" data-testid="book-add" onClick={() => onChange([...books, emptyBook()])}>
         + Add another book
       </button>
     </div>
@@ -1132,7 +1167,11 @@ function DatabaseReview({ submission }) {
           <ReviewField
             key={network}
             label={network.replaceAll("_", " ")}
-            value={<a href={url}>{url}</a>}
+            value={(
+              <a href={url} data-testid={`review-social-${network}`}>
+                {url}
+              </a>
+            )}
           />
         ))}
       </dl>
@@ -1211,8 +1250,15 @@ function DatabaseReview({ submission }) {
             <h3>Buy links</h3>
             {book.buy_links?.length ? (
               <ul>
-                {book.buy_links.map((url) => (
-                  <li key={url}><a href={url}>{url}</a></li>
+                {book.buy_links.map((url, linkIndex) => (
+                  <li key={url}>
+                    <a
+                      href={url}
+                      data-testid={`review-book-${bookIndex}-buy-link-${linkIndex}`}
+                    >
+                      {url}
+                    </a>
+                  </li>
                 ))}
               </ul>
             ) : <p>None provided</p>}
@@ -1229,7 +1275,14 @@ function DatabaseReview({ submission }) {
                   <ReviewField
                     label="Review URL"
                     value={review.original_review_url
-                      ? <a href={review.original_review_url}>{review.original_review_url}</a>
+                      ? (
+                        <a
+                          href={review.original_review_url}
+                          data-testid={`review-book-${bookIndex}-editorial-${index}-url`}
+                        >
+                          {review.original_review_url}
+                        </a>
+                      )
                       : "Not provided"}
                   />
                   <ReviewField
@@ -1272,7 +1325,14 @@ function DatabaseReview({ submission }) {
                   <ReviewField
                     label="Review URL"
                     value={review.original_review_url
-                      ? <a href={review.original_review_url}>{review.original_review_url}</a>
+                      ? (
+                        <a
+                          href={review.original_review_url}
+                          data-testid={`review-book-${bookIndex}-other-${index}-url`}
+                        >
+                          {review.original_review_url}
+                        </a>
+                      )
                       : "Not provided"}
                   />
                   <ReviewField
@@ -1322,6 +1382,7 @@ function DatabaseReview({ submission }) {
             <a
               className="button-primary review-download"
               href={book.sample_chapter_url}
+              data-testid={`review-book-${bookIndex}-sample-download`}
             >
               Download Sample Chapter {bookIndex + 1}
             </a>
@@ -1603,7 +1664,7 @@ export default function App({
         </div>
 
         {stepIndex > 0 && (
-          <button type="button" className="button-secondary wizard-back" onClick={goBack}>
+          <button type="button" className="button-secondary wizard-back" data-testid="wizard-back" onClick={goBack}>
             Back
           </button>
         )}
@@ -1650,6 +1711,7 @@ export default function App({
                 <textarea
                   ref={inputRef}
                   id={step.id}
+                  data-testid={step.id}
                   rows={5}
                   value={answers[step.id]}
                   onChange={(event) => setAnswer(step.id, event.target.value)}
@@ -1659,6 +1721,7 @@ export default function App({
                 <input
                   ref={inputRef}
                   id={step.id}
+                  data-testid={step.id}
                   type="text"
                   required={step.required}
                   value={answers[step.id]}
@@ -1682,16 +1745,16 @@ export default function App({
         <div className="wizard-actions">
           <div className="wizard-actions-end">
             {step.id === "review" ? (
-              <button type="submit" className="button-primary" disabled={submitting}>
+              <button type="submit" className="button-primary" data-testid="generate-site" disabled={submitting}>
                 {submitting ? "Validating…" : "Generate Site"}
               </button>
             ) : (
               <>
-                <button type="button" className="button-primary" onClick={advance} disabled={continueDisabled}>
+                <button type="button" className="button-primary" data-testid="wizard-continue" onClick={advance} disabled={continueDisabled}>
                   Continue
                 </button>
                 {isSkippable && (
-                  <button type="button" className="button-link" onClick={skip} disabled={submitting}>
+                  <button type="button" className="button-link" data-testid="wizard-skip" onClick={skip} disabled={submitting}>
                     Skip
                   </button>
                 )}

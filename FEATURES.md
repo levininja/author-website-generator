@@ -5,7 +5,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 ## ID Tracker
 
 - Latest feature ID: `F023`
-- Latest task ID: `T002`
+- Latest task ID: `T003`
 - Latest research ID: `R001`
 
 Four lists: **Doing** (active work), **Milestone 1** (ordered by priority), **Backlog** (unordered), and **Done**.
@@ -238,6 +238,15 @@ administrative pages must be separately authenticated and authorized.
 - `tests/integration/test_full_provision.py` — full provisioning flow with real API calls; verifies site URL returns HTTP 200 after completion; cleans up the test app on teardown
 - **Human prerequisite:** dedicated throwaway Cloudways app + Cloudflare zone reserved exclusively for testing — must not be a real client zone
 
+---
+
+### T003 — Break the onboarding React app into separate files
+
+**Type:** Task
+**As** a developer, I want `frontend/onboarding/App.jsx` divided into smaller,
+focused files so that the onboarding frontend is easier to understand and
+maintain.
+
 
 ---
 
@@ -312,7 +321,8 @@ website code; the endpoint is intentionally a no-op until F005.
 - Accept link fields with or without an HTTP scheme, require a valid public
   domain suffix, and normalize bare domains to HTTPS before persistence
 - Optional reader-fit copy and sample chapter PDF
-- Add/remove rows handled client-side by `onboarding/static/onboarding/onboard.js` — no page reload
+- Add/remove rows handled client-side by the Vite bundle built at
+  `onboarding/static/onboarding/dist/onboard.js` — no page reload
 - Book entries modeled as a list of `BookEntry` in `OnboardingForm`
 - Persist all validated book data in records associated with the author
 - Store normalized category, genre, and subgenre records in separate lookup

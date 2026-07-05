@@ -20,6 +20,6 @@ export default defineConfig(({ command }) => ({
       name: "AuthorOnboarding",
       fileName: () => "onboard.js",
     },
-    outDir: "onboarding/static/onboarding",
+    outDir: "onboarding/static/onboarding/dist",
   },
 }));

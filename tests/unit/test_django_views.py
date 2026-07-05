@@ -90,7 +90,7 @@ def test_onboard_returns_200_and_loads_react_mount(client):
 
     assert response.status_code == 200
     assert b'id="onboarding-root"' in response.content
-    assert b"/static/onboarding/onboard.js" in response.content
+    assert b"/static/onboarding/dist/onboard.js" in response.content
 
 
 @pytest.mark.django_db

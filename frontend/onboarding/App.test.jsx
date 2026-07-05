@@ -124,6 +124,15 @@ function renderApp(props = {}) {
   return render(<App genreTree={GENRE_TREE} {...props} />);
 }
 
+function expectInteractiveElementsToHaveUniqueTestIds(container) {
+  const elements = [...container.querySelectorAll("a, button, input, select, textarea")];
+  const testIds = elements.map((element) => element.getAttribute("data-testid"));
+
+  expect(elements.length).toBeGreaterThan(0);
+  testIds.forEach((testId) => expect(testId).toBeTruthy());
+  expect(new Set(testIds).size).toBe(testIds.length);
+}
+
 
 beforeEach(() => {
   Object.defineProperty(URL, "createObjectURL", {
@@ -143,6 +152,28 @@ afterEach(() => {
 
 
 describe("wording, navigation, and grouped steps", () => {
+  it.each([
+    ["author_name"],
+    ["author_bio_short"],
+    ["colors"],
+    ["social_links"],
+    ["author_headshot"],
+  ])("gives every interactive element a unique test ID on the %s step", (initialStepId) => {
+    const { container } = renderApp({ initialStepId });
+
+    expectInteractiveElementsToHaveUniqueTestIds(container);
+  });
+
+  it("gives genre search, suggestions, and selected-genre controls unique test IDs", async () => {
+    const user = userEvent.setup();
+    const { container } = renderApp({ initialStepId: "genres" });
+
+    await user.type(screen.getByRole("combobox", { name: /search genres/i }), "cy");
+    await user.click(screen.getByRole("option", { name: /cyberpunk/i }));
+
+    expectInteractiveElementsToHaveUniqueTestIds(container);
+  });
+
   it("loads the genre catalog from the database-backed endpoint", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
@@ -389,6 +420,19 @@ describe("wording, navigation, and grouped steps", () => {
 
 
 describe("required book portfolio", () => {
+  it("gives all book, series, repeater, and optional controls unique test IDs", async () => {
+    const user = userEvent.setup();
+    const { container } = renderApp({ initialStepId: "books" });
+
+    await user.click(screen.getByLabelText(/part of a series/i));
+    await user.click(screen.getByRole("button", { name: /add editorial review/i }));
+    await user.click(screen.getByRole("button", { name: /add reader review/i }));
+    await user.click(screen.getByRole("button", { name: /add award/i }));
+    await user.click(screen.getByRole("button", { name: /add another book/i }));
+
+    expectInteractiveElementsToHaveUniqueTestIds(container);
+  });
+
   it("starts with one book and exposes every required core field", () => {
     renderApp({ initialStepId: "books" });
 
@@ -799,6 +843,33 @@ describe("payload and upload submission", () => {
     expect(screen.getByRole("img", { name: /secondary color swatch #abcdef/i })).toBeVisible();
     expect(screen.getByText("#112233")).toBeVisible();
     expect(screen.getByText("#abcdef")).toBeVisible();
+  });
+
+  it("gives every review action and link a unique test ID", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: "ok", author_id: STORED_AUTHOR.id }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => STORED_AUTHOR,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => STORED_BOOKS,
+      });
+    const { container } = renderApp({
+      initialStepId: "social_links",
+      initialAnswers: requiredAnswers(),
+      initialBooks: [completeBook()],
+    });
+
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    await screen.findByRole("heading", { name: /review your new website details/i });
+
+    expectInteractiveElementsToHaveUniqueTestIds(container);
   });
 
   it("shows every user-facing book field on the database confirmation page", async () => {
