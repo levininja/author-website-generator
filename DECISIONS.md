@@ -68,26 +68,18 @@ The marketing site uses testimonials and links to live examples to establish tru
 
 ---
 
-## AWG uses Django 5.2 LTS
+## AWG uses Django and React
 
-Django provides a long-term-supported Python foundation with built-in data, authentication, security, migration, and testing capabilities.
-
----
-
-## User accounts use a custom model with UUID primary keys
-
-AWG uses `accounts.User` with a random UUID v4 primary key. Defining the custom model before other models reference users avoids a difficult later migration, while UUIDs provide stable, non-sequential identifiers without embedding PII.
-
----
-
-## The onboarding and generation application uses React
-
-AWG uses React for a two-part frontend application backed by Django:
+AWG uses Python/Django 5.2 LTS for backend validation, persistence,
+authentication, security, and generation orchestration. React owns the
+interactive frontend flows where shared client-side state matters:
 
 1. Onboard the user by collecting the information needed to build an author website.
 2. Generate the website from the submitted information and communicate the result.
 
-React is appropriate for the shared state and interactive workflow across these stages, while Django remains responsible for backend validation, persistence, and generation.
+Django provides a long-term-supported backend foundation, while React is
+appropriate for the wizard and generation-result experience. React-based
+generated-site preview remains undecided.
 
 Onboarding uses a wizard that asks one question at a time and retains answers
 when the user navigates backward. Completing the survey atomically persists the
@@ -105,18 +97,43 @@ shared taxonomy.
 
 ---
 
+## User accounts use a custom model with UUID primary keys
+
+AWG uses `accounts.User` with a random UUID v4 primary key. Defining the custom model before other models reference users avoids a difficult later migration, while UUIDs provide stable, non-sequential identifiers without embedding PII.
+
+---
+
 ## Visual styles use one base child theme plus Design Systems
 
 AWG uses one shared Divi child theme for every generated website and delivers
 visual variation through version-controlled Design System folders. The base
 child theme owns shared PHP, the Books custom post type, accessibility,
 typography, responsive, and performance defaults. Each Design System owns the
-Theme Builder exports, page layout exports, preview assets/templates, and
-metadata needed to apply a distinct author-facing style.
+`manifest.json`, Theme Builder exports, page layout exports, preview
+assets/templates, and metadata needed to apply a distinct author-facing style
+programmatically.
 
 This keeps Divi and PHP maintenance centralized while allowing the style
 library to grow from a small alpha set to many genre-specific and
 genre-agnostic options.
+
+---
+
+## Theme Builder JSONs deliver global design
+
+Divi Theme Builder exports are the primary mechanism for shared headers,
+footers, and single-book templates. This keeps global structure consistent
+across generated sites while allowing each Design System to define its own
+visual treatment.
+
+---
+
+## Layout JSONs deliver pre-built pages
+
+Design Systems include Divi layout exports for standard pages such as Home,
+About, Books, and Contact. Generated sites start from complete page structures
+instead of blank templates, then AWG fills them with submitted author, book,
+branding, and marketing data.
 
 ---
 
@@ -141,11 +158,80 @@ automation can share one consistent content model.
 
 ---
 
+## WordPress custom code stays modular
+
+AWG custom WordPress code lives in an AWG must-use plugin or the shared Divi
+child theme. WordPress core, Divi core, and third-party plugins are not modified
+directly, so updates do not overwrite AWG code.
+
+---
+
 ## AWG does not use Phoenix Super Theme as its foundation
 
 AWG's generated websites are based on the shared AWG Divi child theme, not
 Phoenix Super Theme. Avoiding that dependency reduces licensing uncertainty and
 long-term maintenance risk.
+
+---
+
+## Generated sites are separate WordPress installs, not Multisite
+
+Every production author website is its own WordPress installation. This keeps
+sites portable and avoids coupling client ownership to a shared Multisite
+network.
+
+---
+
+## Cloudways is the primary production host
+
+Cloudways is the primary hosting provider for generated WordPress sites, with
+Liquid Web as a fallback. Production provisioning targets Cloudways first.
+
+---
+
+## Clients own their domains
+
+Authors purchase and own their domains. AWG may manage DNS records during
+provisioning, but the domain remains client-owned so the generated site remains
+portable.
+
+---
+
+## Standard DNS uses Cloudflare
+
+Standard production DNS uses Cloudflare's free tier per client. Cloudflare
+provides API automation for records plus CDN, SSL, and DDoS protections.
+
+---
+
+## Only the example site has staging
+
+AWG keeps one shared staging environment for the example site. Individual
+client staging environments are deferred because the underlying code is shared
+and client differences are primarily content and selected Design System.
+
+---
+
+## Deployments do not overwrite client databases
+
+In v1, deployments replace backend PHP code for all sites on the target server
+and replace the database only for the example site. Client site databases are
+not touched by deployments.
+
+---
+
+## Provisioning uses WP-CLI over SSH
+
+Production WordPress setup and configuration are scripted with WP-CLI over SSH
+instead of manual dashboard work. This makes provisioning repeatable and easier
+to validate.
+
+---
+
+## DNS must resolve before SSL provisioning
+
+SSL provisioning runs only after DNS points the domain to the target server.
+Let's Encrypt validation fails if the domain does not resolve first.
 
 ---
 

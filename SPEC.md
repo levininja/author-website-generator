@@ -42,9 +42,10 @@ The product is an engineering-grade, managed website service built exclusively f
 
 ---
 
-## Technical Architecture & Decisions
+## Technical Architecture
 ### Core Platform & Tech Stack of This Project
-Python / Django 5.2 LTS
+Python / Django 5.2 LTS backend with React frontend flows. See
+[Product decisions](DECISIONS.md#awg-uses-django-and-react).
 
 ### Core Platform & Tech Stack of Websites we will Generate
 
@@ -55,34 +56,29 @@ Python / Django 5.2 LTS
 - **Custom Code:** All PHP modifications live in either:
   - A custom **must-use plugin (mu-plugin)** specific to this system, OR
   - A custom **Divi child theme**
-  - We do **not** modify WordPress core, Divi core, or any other plugin directly, so that WP/PHP updates never override our code. All custom code is modular and easy to find.
-- **Base child theme:** Every generated site uses one shared Divi child theme. It registers the Books custom post type, provides accessibility, typography, responsive, and performance defaults, and keeps project-specific PHP in one maintainable foundation.
-- **Design Systems Library:** Visual variation is delivered through version-controlled Design System folders rather than separate child themes. Each Design System has a `manifest.json`, Theme Builder exports, page layout exports, preview assets/templates, and metadata for filtering in onboarding.
-- **Generated pages:** The generator creates key pages such as Home, About, Books, and Contact from the selected Design System's exported layout JSONs, then populates those pages with the submitted author, book, branding, and marketing data.
-- **Books content model:** Generated WordPress sites model books as a custom post type rather than as unstructured page content. This supports book archives, single-book templates, metadata, and future book-specific automation.
+  - See [Product decisions](DECISIONS.md#wordpress-custom-code-stays-modular).
+- **Base child theme:** Every generated site uses one shared Divi child theme. See [Product decisions](DECISIONS.md#visual-styles-use-one-base-child-theme-plus-design-systems).
+- **Design Systems Library:** Visual variation is delivered through version-controlled Design System folders. See [Product decisions](DECISIONS.md#visual-styles-use-one-base-child-theme-plus-design-systems).
+- **Generated pages:** The generator creates key pages such as Home, About, Books, and Contact from the selected Design System's exported layout JSONs. See [Product decisions](DECISIONS.md#layout-jsons-deliver-pre-built-pages).
+- **Books content model:** Generated WordPress sites model books as a custom post type. See [Product decisions](DECISIONS.md#books-are-generated-as-a-wordpress-custom-post-type).
 
 ### Infrastructure & Hosting of Websites we will Generate
 
-- **Primary Hosting Provider:** Cloudways (A plan). Fallback: Liquid Web (B plan).
-- **NO WordPress Multisite.** Every client gets a separate WordPress install.
+- **Primary Hosting Provider:** Cloudways (A plan). Fallback: Liquid Web (B plan). See [Product decisions](DECISIONS.md#cloudways-is-the-primary-production-host).
+- **NO WordPress Multisite.** Every client gets a separate WordPress install. See [Product decisions](DECISIONS.md#generated-sites-are-separate-wordpress-installs-not-multisite).
 - **Server Architecture:**
-  - All non-ecommerce author websites share **one server** (Cloudways has strong site isolation; the rare kernel-level exploit that could break out of one app targets ecommerce sites, not standard author sites).
-  - Each ecommerce author website gets its **own dedicated server**. This raises costs for ecommerce clients.
+  - All non-ecommerce author websites share **one server**.
+  - Each ecommerce author website gets its **own dedicated server**.
   - The example/demo site lives on the shared non-ecommerce server.
   - The ecommerce example/demo site lives on its own separate server.
 - **Config file:** A config file will track all servers (shared non-ecommerce server, ecommerce example server, and each ecommerce client server).
-- **Staging:** One shared staging environment for the example site only. Clients do not get individual staging environments — the underlying code is identical across all sites; only skins and content differ.
+- **Staging:** One shared staging environment for the example site only. See [Product decisions](DECISIONS.md#only-the-example-site-has-staging).
 
 ### Domain & DNS
 
-- **Clients purchase and own their own domains.**
+- **Clients purchase and own their own domains.** See [Product decisions](DECISIONS.md#clients-own-their-domains).
 - DNS transfers during onboarding can be done by Levi manually for now; later, give the user a UI for this
-- **Standard DNS: Cloudflare (free tier, per client).**
-  - Cloudflare is free, fast, and excellent
-  - Real DNS dashboard with API access
-  - DNS record management can be fully automated (new client = API call to create their records)
-  - Clients get free SSL, DDoS protection, and CDN as a bonus
-  - Levi can manage their zone if they add him as a member
+- **Standard DNS: Cloudflare (free tier, per client).** See [Product decisions](DECISIONS.md#standard-dns-uses-cloudflare).
 - Process: client moves nameservers to Cloudflare; Levi creates/manages the A record pointing their domain to the Cloudways server.
 
 ### Source Control & Deployment
@@ -90,7 +86,7 @@ Python / Django 5.2 LTS
 - **Source Control:** GitHub manages configurations and site templates.
 - **Git integration:** Cloudways has a built-in Git integration. Each server/app is configured to pull from a specific branch (`production`). When a deployment is triggered, the Cloudways API fetches the latest commit from the `production` branch and deploys it.
 - **Deployment model:**
-  - **v1 (implement now):** A deployment replaces the backend PHP code (mu-plugin + child theme) for **all sites** on the server. It replaces the database only for the **example site**. Client site databases are not touched by deployments.
+  - **v1 (implement now):** A deployment replaces the backend PHP code (mu-plugin + child theme) for **all sites** on the server. It replaces the database only for the **example site**. See [Product decisions](DECISIONS.md#deployments-do-not-overwrite-client-databases).
   - **v2 (document, do not implement):** *(TBD — Levi to define. Likely: per-client database seeding or update propagation for structural/schema changes.)*
 - **CI/CD:** GitHub Actions automates deployment and ongoing maintenance, replacing manual contractor builds. Automated testing is integrated into the pipeline to ensure sites remain stable and scalable.
 - **Client Autonomy:** Architecture mandates true site portability. Clients retain full domain ownership. The system is a managed service, not a proprietary locked-in platform.
@@ -99,13 +95,11 @@ Python / Django 5.2 LTS
 
 - **Workflow Engine:** OpenClaw handles orchestration.
 - **AI Integration:** Multi-agent orchestration (OpenClaw framework, Claude, ChatGPT/Codex) handles complex automated workflows, hooking into site generation and maintenance tasks.
-- **WP-CLI:** Used to generate and configure WordPress sites automatically over SSH. All WP configuration (install, DB import, option-setting, user creation) is scripted via WP-CLI — no manual dashboard interaction required.
+- **WP-CLI:** Used to generate and configure WordPress sites automatically over SSH. See [Product decisions](DECISIONS.md#provisioning-uses-wp-cli-over-ssh).
 
 ### Preview Architecture
 
-- During onboarding, AWG uses OPST previews rather than creating full WordPress demo sites for each visual style.
-- OPST previews render a lightweight top-of-homepage approximation using the selected Design System, the user's primary and secondary colors, and onboarding copy where available.
-- OPST previews are used to help the user choose a style before generation; they do not need production hosting, Cloudways applications, WordPress, DNS, or SSL.
+- During onboarding, AWG uses OPST previews rather than creating full WordPress demo sites for each visual style. See [Product decisions](DECISIONS.md#onboarding-previews-use-one-page-static-templates).
 - After generation, `/sites/<site_id>` can provide a more complete AWG-hosted preview of the generated website package. That preview remains distinct from a production WordPress deployment.
 
 ### Security

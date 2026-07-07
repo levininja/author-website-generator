@@ -13,7 +13,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Feature li
 - **Step 9:** Email → send client WordPress admin URL and credentials (see F006)
 - **Step 10:** Show success with site URL (see F007)
 
-> **Sequencing note — correction from original spec:** SSL provisioning (Step 8) must come after DNS resolves (Steps 6+7). The original spec had SSL before DNS, which causes Let's Encrypt to fail because the domain doesn't yet resolve to the server. Corrected order: 1 → 2 → 3 → 4 → 5 → 6 → 7(DNS wait) → 8 → 9. The Onboarding Flow diagram in SPEC.md must be updated to reflect this when the step is implemented.
+> **Sequencing note — correction from original spec:** SSL provisioning (Step 8) must come after DNS resolves (Steps 6+7). See [Product decisions](DECISIONS.md#dns-must-resolve-before-ssl-provisioning). Corrected order: 1 → 2 → 3 → 4 → 5 → 6 → 7(DNS wait) → 8 → 9. The Onboarding Flow diagram in SPEC.md must be updated to reflect this when the step is implemented.
 
 **Preflight check (runs before Step 1, not a numbered provisioning step):**
 - Verify SSH connectivity to the server

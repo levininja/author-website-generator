@@ -4,7 +4,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 
 ## ID Tracker
 
-- Latest feature ID: `F026`
+- Latest feature ID: `F032`
 - Latest task ID: `T003`
 - Latest research ID: `R001`
 
@@ -21,68 +21,56 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task.
 
 
 
-
-
 ---
 
 ## Milestone 1 Epic — Generate and Preview a Standard Author Website
 
-Milestone 1 is v1 of the product for standard, non-ecommerce author websites:
-a user can complete the single-page author website form, submit it, and have
-AWG generate the complete site. Each generated site is persisted with a unique
-ID and is immediately visitable inside the AWG application at
-`/sites/<site_id>`.
+Milestone 1 is v1 of the product for standard, non-ecommerce author websites: a
+user completes the onboarding form, hands off to a separate website-generation
+app, and AWG generates a complete WordPress site. Locally, only one generated
+site is ever live at a time: each new generation deletes the previous one and
+hosts the new one on a local PHP server, on its own port — separate from the
+onboarding app's port and the generation app's port (each of the latter two is
+its own React SPA).
 
-Milestone 1 stops at generation and preview. It does not include payments,
+Milestone 1 stops at generation and local preview. It does not include payments,
 billing, website maintenance, admin pages, production deployment, customer
 domains, DNS, SSL, production hosting, ecommerce features, shopping carts, or
 payment processing.
 
 ---
 
-### F004 — Select a Design System with OPST visual preview
+### F004 — Select a Website Template
 
 **Type:** Feature
-**As** an end user, I can browse available Design Systems, preview how each style affects the top of my homepage, and select the one I want applied to the generated site.
+**As** an end user, I can select which website template AWG will use to generate my site.
 
-- Original spec had this as a plain dropdown — this feature upgrades it to a visual style picker backed by the Design Systems Library
-- The preview uses a One-Page Static Template (OPST), not a full WordPress demo site
-- OPST previews dynamically apply the user's primary and secondary brand colors
-- OPST previews use onboarding copy where available and safe fallback copy where fields are still blank
-- Selected Design System value is included in `OnboardingForm` and passed to F005
-- The generator uses the selected Design System as the basis for the generated website code
+- v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
+- The page shows one line of copy noting more website templates are coming soon
+- No visual preview of the template is shown at this stage
+- Selected template value is included in `OnboardingForm` and passed to F005
+- A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
 
-**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: replace the hardcoded template list with Design System metadata and implement a visual picker with OPST previews.
+**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Replace it with a single hardcoded "Classic" option under the "Website Templates" label plus the one-line coming-soon copy; no picker UI or preview needed.
 
 ---
 
-### F024 — Create the Design Systems Library
-
-**Type:** Feature
-**As** a developer, I can create, version, and manage multiple visual styles so AWG can expand its style catalog without creating separate child themes.
-
-- Store each Design System in its own version-controlled folder, such as `design-systems/clean-literary/`
-- Each Design System includes `manifest.json`, Theme Builder exports, page layout exports, and preview assets/templates
-- `manifest.json` includes style name, genre tags, style metadata, and any values needed by the onboarding picker
-- Start with 3 template layouts for v1, scale to 8–12 Design Systems for beta, and keep the structure capable of supporting 20–50+ styles long term
-- Include both genre-specific and genre-agnostic styles
-- Invalid or incomplete manifests fail validation with actionable developer errors
-- Tests cover manifest parsing, required fields, invalid manifests, and lookup by selected Design System ID
-
----
-
-### F025 — Build the base WordPress child theme foundation
+### F025 — Build the base WordPress child theme foundation + Register Books custom post type
 
 **Type:** Feature
 **As** a developer, I can apply one shared Divi child theme to every generated website so core behavior and quality defaults are maintained in one place.
 
 - Build a single AWG base Divi child theme used by every generated site
-- Do not base the child theme on Phoenix Super Theme
-- Register the Books custom post type in the base child theme
-- Include strong defaults for accessibility, typography, responsive behavior, and performance
-- Keep visual styling minimal; most style variation belongs to Design Systems
+- Register a Books custom post type in the base child theme, with fields covering every book detail captured in onboarding:
+  - title, cover image, description, at least one buy link, category, genre, subgenre
+  - standalone/series flag; when part of a series: series name, book number, total books, series-complete flag
+  - repeatable editorial reviews (publication name) and reader reviews (reviewer name, optional credentials, optional photo, optional star rating, optional original-review link)
+  - starred-review flag, award icons
+  - optional reader-fit copy, optional sample chapter PDF and its original filename
+  - one-based onboarding position (for ordering books on the site)
+- Don't do any custom visual styling or include any other custom coding outside of the custom post type for now
 - Keep custom PHP modular and separate from WordPress core, Divi core, and third-party plugin code
-- Tests or validation cover child-theme packaging, required files, and Books custom post type registration
+- Tests or validation cover child-theme packaging, required files, and Books custom post type registration, including its fields
 
 ---
 
@@ -91,12 +79,69 @@ payment processing.
 **Type:** Feature
 **As** an end user, my generated website includes the key author pages and structured book content so I start with a usable site instead of a blank theme.
 
-- Generate key pages such as Home, About, Books, and Contact from the selected Design System's exported layout JSONs
-- Populate page sections with submitted author, book, brand, newsletter, and social data where available
-- Store books as Books custom post type records rather than only static page sections
-- Apply Theme Builder templates for global header, footer, archive, and single-book consistency
-- Users can freely edit, delete, or add sections afterward in Divi
-- Tests cover page generation, selected Design System layout usage, book custom post creation, missing optional content, and Theme Builder template application
+- Generate key pages: Home, About, Books, and a single generic Book Detail Page, using the v1 "Classic" template layout
+- In this version, those pages will be stubs mostly, not final products
+- Every field that was submitted in onboarding should be displayed on a page:
+  - Author information should be put on the About page (bios, picture, etc.)
+  - The selected color swatches should be displayed on the Home page as swatches of color
+  - The book information should be displayed on the Book Detail Page (book title, genre, book cover, series information, etc.) — this is one generic page shared by all books in v1; the URL is not customized per book (per-book pages are a follow-up, see F027)
+  - Any other fields from onboarding that don't make sense to put on the author or book pages should be put on the Home page (genre, newsletter link, social links, etc.)
+- Store books as Books custom post type records (F025) rather than only static page sections
+- Divi does NOT need to be installed yet at this stage (see F028)
+- Header/nav and footer generation is out of scope here (see F029)
+- The selected template has no effect on layout at this stage, except to display "Classic" by name on the Home page
+- Tests cover page generation, missing optional content, and storage/retrieval of all onboarding fields
+
+---
+
+### F027 — Give each book its own detail page
+
+**Type:** Feature
+**As** an end user, each of my books gets its own page with a real URL instead of sharing one generic Book Detail Page.
+
+- Depends on F026
+- Generate one page per book, using a URL slug derived from the book title
+- Update the Books listing page to link to each book's own page instead of the shared generic page
+- Tests cover slug generation (including duplicate-title collisions), per-book page content, and the Books-listing links
+
+---
+
+### F028 — Install and configure Divi with baseline settings
+
+**Type:** Feature
+**As** a developer, I can have Divi installed and configured with sensible defaults on every generated site so pages render correctly and on-brand.
+
+- Depends on F026
+- Install and activate the Divi theme on the generated site
+- Set Divi's global font settings
+- Set Divi's global color palette from the author's submitted primary/secondary brand colors
+- Set the site logo and favicon from onboarding assets where available
+- Set WordPress permalinks to a pretty (non-default) structure
+- Tests or validation cover installation and global font/color/logo/favicon/permalink configuration, including behavior when optional branding assets are missing
+
+---
+
+### F029 — Generate header/nav and footer on site generation
+
+**Type:** Feature
+**As** an end user, my generated site has a working header/navigation and footer instead of Divi's defaults.
+
+- Depends on F028
+- Generate a header with navigation linking to the generated pages (Home, About, Books, Contact)
+- Generate a footer that includes the author's submitted social links as icons/links
+- Tests cover nav-link generation, footer social-link rendering, and behavior when optional social links are missing
+
+---
+
+### F030 — Split website generation into its own app
+
+**Type:** Feature
+**As** a developer, I can run website generation as its own app on its own port so onboarding, generation, and the generated WordPress preview don't collide.
+
+- The existing onboarding app keeps the multi-step form through the final review/confirmation page
+- Clicking "Generate" navigates from the onboarding app to a new Generation app (its own React SPA, its own port)
+- The Generation app owns the `POST /generate` call, the result/error screen (F007), and the link to the generated site preview (F020)
+- Tests cover the handoff from onboarding to the Generation app and the Generation app's own request/result handling
 
 ---
 
@@ -107,26 +152,25 @@ payment processing.
 
 - Milestone 1 generation supports standard, non-ecommerce author websites only
 - `generate_site(form)` validates the submitted onboarding data and generates the full website code, including all pages, content, styling, and assets required for the preview
-- Generation uses the selected Design System, base child theme, Theme Builder exports, page layout exports, and submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
+- Generation uses the base child theme (F025), generated pages and book content (F026, F027), Divi installation and configuration (F028), header/nav and footer (F029), and the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
 - The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
 - Generation failures return a safe, human-readable error and do not create a partial site record
 - Files: `generator/site_generation.py`, `tests/unit/test_site_generation.py`
-- Tests: complete generation, optional-field handling, invalid input, Design System/content mapping, and generation failure
+- Tests: complete generation, optional-field handling, invalid input, template/content mapping, and generation failure
 
 ---
 
-### F020 — Store and preview each generated website
+### F020 — Host the single generated WordPress site for local preview
 
 **Type:** Feature
-**As** an end user, I can view the website generated from my submission on a newly created AWG page.
+**As** an end user, I can view the website generated from my submission running as a real local WordPress site.
 
-- After successful generation, create a cryptographically random, URL-safe unique site ID
-- Persist the complete generated code and the metadata required to serve it, keyed by site ID
-- `GET /sites/<site_id>` renders the generated website within AWG; it is a preview, not a production deployment or customer hosting environment
-- Unknown or malformed IDs return 404 without exposing storage paths or other site records
-- A successful response from `POST /generate` includes the site ID and `/sites/<site_id>` URL
-- Site creation is atomic: a preview becomes addressable only after all generated code has been written successfully
-- Tests cover unique ID creation, persistence, successful preview rendering, missing IDs, malformed IDs, and incomplete-write cleanup
+- Only one generated site is hosted at a time; generating a new site deletes the previous one first, then writes and hosts the new one in its place
+- The generated site lives in its own dedicated folder and is served by a local PHP server on its own port, separate from the onboarding app's and Generation app's ports
+- A successful generation from the Generation app (F030) surfaces a link to the locally hosted site
+- Generation is atomic: the previous site is only removed once the new site's files are fully written, and the new site is only hosted once fully written
+- Update the README quickstart at the same time this ships: describe the new three-app local architecture and why in one sentence, and add quickstart steps for spinning up the PHP server
+- Tests cover file replacement (old site removed, new site written), atomic write/replace behavior, and successful local serving
 
 ---
 
@@ -135,7 +179,8 @@ payment processing.
 **Type:** Feature
 **As** an end user, when generation completes I can open the generated website, and if it fails I see a human-readable error message.
 
-- On success: redirect to or display a link to `/sites/<site_id>`
+- Lives in the Generation app (F030), not the onboarding app
+- On success: redirect to or display a link to the locally hosted generated site (F020)
 - On failure: show a specific, actionable error plus a dismiss button
 - No internal exception details or stack traces are exposed to the user
 - Error display persists until the user dismisses it via X or resubmits
@@ -171,6 +216,46 @@ to generate and preview a standard, non-ecommerce website inside AWG.
 
 - Document relevant option keys, value formats, field mappings, and version caveats
 - Required for the production configuration portions of F017, not for Milestone 1 generation and preview
+
+---
+
+### F024 — Create the Design Systems Library
+
+**Type:** Feature
+**As** a developer, I can create, version, and manage multiple visual styles so AWG can expand its template catalog without creating separate child themes.
+
+- Not required for Milestone 1, which ships a single hardcoded "Classic" template (F004) with no library infrastructure
+- Store each Design System in its own version-controlled folder, such as `design-systems/classic/`
+- Each Design System includes `manifest.json`, Theme Builder exports, page layout exports, and preview assets/templates
+- `manifest.json` includes style name, genre tags, style metadata, and any values needed by the onboarding picker
+- Start with 1 template layout: migrate the v1 "Classic" design into the library format
+- Invalid or incomplete manifests fail validation with actionable developer errors
+- Tests cover manifest parsing, required fields, invalid manifests, and lookup by selected Design System ID
+
+---
+
+### F031 — Upgrade Website Templates to a visual picker with OPST previews
+
+**Type:** Feature
+**As** an end user, I can browse available website templates visually and preview how each affects the top of my homepage before selecting one.
+
+- Depends on F024 (Design Systems Library) and having more than one template available
+- Upgrades F004's single hardcoded "Classic" option into a visual style picker backed by the Design Systems Library
+- The preview uses a One-Page Static Template (OPST), not a full WordPress demo site
+- OPST previews dynamically apply the user's primary and secondary brand colors
+- OPST previews use onboarding copy where available and safe fallback copy where fields are still blank
+- Selected template value is included in `OnboardingForm` and passed to F005
+- The generator uses the selected template as the basis for the generated website code
+
+---
+
+### F032 — Generate a series detail page for book series
+
+**Type:** Feature
+**As** an end user, when one of my books is part of a series, my generated site includes a dedicated page for that series.
+
+- Only relevant once a book is marked as part of a series (F002 series fields)
+- Out of scope for Milestone 1, which only generates per-book content (F026, F027)
 
 ---
 
