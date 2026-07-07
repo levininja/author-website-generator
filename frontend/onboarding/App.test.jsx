@@ -220,6 +220,43 @@ describe("wording, navigation, and grouped steps", () => {
     expect(screen.getByRole("button", { name: /continue/i })).toHaveFocus();
   });
 
+  it("tabs from Continue to Back on a non-skippable step when Back is present", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialStepId: "author_email",
+      initialAnswers: requiredAnswers(),
+    });
+
+    const input = screen.getByLabelText(/contact email/i);
+    await waitFor(() => expect(input).toHaveFocus());
+    await user.tab();
+    expect(screen.getByRole("button", { name: /continue/i })).toHaveFocus();
+
+    await user.tab();
+
+    expect(screen.getByRole("button", { name: /^back$/i })).toHaveFocus();
+  });
+
+  it("tabs from Continue to Skip on a skippable step", async () => {
+    const user = userEvent.setup();
+    renderApp({ initialStepId: "site_tagline" });
+
+    screen.getByRole("button", { name: /continue/i }).focus();
+    await user.tab();
+
+    expect(screen.getByRole("button", { name: /^skip$/i })).toHaveFocus();
+  });
+
+  it("tabs from Skip to Back on a skippable step when Back is present", async () => {
+    const user = userEvent.setup();
+    renderApp({ initialStepId: "site_tagline" });
+
+    screen.getByRole("button", { name: /^skip$/i }).focus();
+    await user.tab();
+
+    expect(screen.getByRole("button", { name: /^back$/i })).toHaveFocus();
+  });
+
   it("renders a catalog-backed autocomplete instead of the genre checkbox list", () => {
     renderApp({ initialStepId: "genres" });
 
@@ -650,8 +687,8 @@ describe("required book portfolio", () => {
 
   it("does not show inline buy-links error on untouched field after Back navigation clears validation state", async () => {
     const user = userEvent.setup();
-    // brand_colors sits immediately before books in the step list
-    renderApp({ initialStepId: "brand_colors" });
+    // selected_template sits immediately before books in the step list
+    renderApp({ initialStepId: "selected_template" });
 
     // Advance to books
     await user.click(screen.getByRole("button", { name: /continue/i }));

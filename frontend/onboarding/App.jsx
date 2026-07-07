@@ -5,6 +5,15 @@ const IMAGE_LIMIT = 10 * 1024 * 1024;
 const PDF_LIMIT = 20 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const TEMPLATE_OPTIONS = [
+  { name: "Classic Author",      previewUrl: "/static/onboarding/template-previews/classic-author.png" },
+  { name: "Modern Minimalist",   previewUrl: "/static/onboarding/template-previews/modern-minimalist.png" },
+  { name: "Bold & Bright",       previewUrl: "/static/onboarding/template-previews/bold-bright.png" },
+  { name: "Cozy Romance",        previewUrl: "/static/onboarding/template-previews/cozy-romance.png" },
+  { name: "Thriller Dark",       previewUrl: "/static/onboarding/template-previews/thriller-dark.png" },
+  { name: "Literary Fiction",    previewUrl: "/static/onboarding/template-previews/literary-fiction.png" },
+];
+
 const STEPS = [
   {
     id: "author_name",
@@ -71,6 +80,12 @@ const STEPS = [
     type: "colors",
   },
   {
+    id: "selected_template",
+    title: "Choose your website template",
+    help: "Click a template to select it. Each one gives your site a distinct look.",
+    type: "template",
+  },
+  {
     id: "books",
     title: "Tell us about your books",
     help: "At least one complete book is required.",
@@ -106,6 +121,7 @@ const EMPTY_ANSWERS = {
   genres: [],
   primary_color: "#2563eb",
   secondary_color: "#64748b",
+  selected_template: null,
   newsletter_link: "",
   social_twitter: "",
   social_instagram: "",
@@ -390,6 +406,10 @@ function buildPayload(answers, books) {
     payload.author_headshot_key = "author_headshot";
   }
 
+  if (answers.selected_template) {
+    payload.selected_template = answers.selected_template;
+  }
+
   const socialLinks = {};
   SOCIAL_FIELDS.forEach(([answerField, payloadField]) => {
     const value = String(answers[answerField] || "").trim();
@@ -625,6 +645,27 @@ function GenreStep({ selected, genreTree, error, onChange }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+
+function TemplatePicker({ value, onChange, templates }) {
+  return (
+    <div className="template-grid">
+      {templates.map(({ name, previewUrl }) => (
+        <button
+          key={name}
+          type="button"
+          className={`template-card${value === name ? " selected" : ""}`}
+          data-testid={`template-card-${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`}
+          aria-pressed={value === name}
+          onClick={() => onChange(name)}
+        >
+          <img src={previewUrl} alt={`${name} template preview`} />
+          <div className="template-card-label">{name}</div>
+        </button>
+      ))}
     </div>
   );
 }
@@ -1163,6 +1204,7 @@ function DatabaseReview({ submission }) {
           )}
         />
         <ReviewField label="Newsletter" value={submission.newsletter_link} />
+        <ReviewField label="Website template" value={submission.selected_template || "None selected"} />
         {Object.entries(submission.social_links || {}).map(([network, url]) => (
           <ReviewField
             key={network}
@@ -1542,6 +1584,7 @@ export default function App({
         primary_color: authorData.primary_color,
         secondary_color: authorData.secondary_color,
         newsletter_link: authorData.newsletter_link,
+        selected_template: authorData.selected_template,
         author_headshot_url: authorData.headshot_url,
         social_links: authorData.social_links,
         books: booksData.map((book) => ({
@@ -1600,6 +1643,8 @@ export default function App({
       SOCIAL_FIELDS.forEach(([field]) => {
         clearedAnswers[field] = "";
       });
+    } else if (step.type === "template") {
+      clearedAnswers[step.id] = null;
     } else {
       clearedAnswers[step.id] = "";
     }
@@ -1650,6 +1695,7 @@ export default function App({
     (!step.required && !step.type && step.id !== "review")
     || step.type === "socials"
     || step.type === "headshot"
+    || step.type === "template"
   );
   const continueDisabled = (
     (step.type === "genres" || step.type === "books")
@@ -1674,12 +1720,6 @@ export default function App({
           <span style={{ width: `${((step.id === "review" ? answerSteps : stepIndex + 1) / answerSteps) * 100}%` }} />
         </div>
 
-        {stepIndex > 0 && (
-          <button type="button" className="button-secondary wizard-back" data-testid="wizard-back" onClick={goBack}>
-            Back
-          </button>
-        )}
-
         <section className="wizard-question" key={step.id}>
           <h1>{step.title}</h1>
           {step.help && <p className="question-help step-help">{step.help}</p>}
@@ -1698,6 +1738,12 @@ export default function App({
               <ColorField id="primary" label="Primary brand color" value={answers.primary_color} onChange={(value) => setAnswer("primary_color", value)} />
               <ColorField id="secondary" label="Secondary brand color" value={answers.secondary_color} onChange={(value) => setAnswer("secondary_color", value)} />
             </div>
+          ) : step.type === "template" ? (
+            <TemplatePicker
+              value={answers.selected_template}
+              onChange={(value) => setAnswer("selected_template", value)}
+              templates={TEMPLATE_OPTIONS}
+            />
           ) : step.type === "books" ? (
             <BookPortfolioStep
               books={books}
@@ -1773,6 +1819,12 @@ export default function App({
             )}
           </div>
         </div>
+
+        {stepIndex > 0 && (
+          <button type="button" className="button-secondary wizard-back" data-testid="wizard-back" onClick={goBack}>
+            Back
+          </button>
+        )}
       </form>
     </main>
   );
