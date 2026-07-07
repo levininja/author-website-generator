@@ -9,17 +9,21 @@
       "Heist / Caper Adventure"
     ],
     "Crime": [
-      "Cozy Mystery",
       "Hard-Boiled Detective",
       "Police Procedural",
       "Amateur Sleuth",
       "Legal / Courtroom Drama",
-      "Historical Mystery",
       "Noir",
       "Neo-Noir"
     ],
+    "Mystery": [
+      "Cozy Mystery",
+      "Historical Mystery",
+      "Mystery"
+    ],
     "Fantasy": [
       "Epic Fantasy",
+      "High Fantasy",
       "Urban Fantasy",
       "Grimdark",
       "Sword and Sorcery",
@@ -41,8 +45,7 @@
       "20th Century",
       "Colonial History",
       "Civil War History",
-      "Frontier History",
-      "Biographical Historical Fiction"
+      "Frontier History"
     ],
     "Horror": [
       "Psychological Horror",
@@ -149,7 +152,9 @@
     ],
     "History": [
       "Ancient History",
-      "Medieval & Early Modern History",
+      "Medieval History",
+      "Renaissance History",
+      "Enlightenment History",
       "Modern History (18th-21st Century)",
       "Military History & Warfare",
       "Social, Cultural & Intellectual History",
@@ -173,22 +178,25 @@
       "Elections, Democracy & Political Systems"
     ],
     "Religion & Spirituality": [
-      "Christianity & Theology",
+      "Christianity",
       "Buddhism, Hinduism & Eastern Traditions",
-      "Islam, Judaism & Abrahamic Faiths",
+      "Islam",
+      "Judaism",
       "New Age, Metaphysical & Occult",
       "Atheism, Agnosticism & Secularism",
       "Inspirational, Devotional & Prayer",
       "Comparative Religion & Mythology"
     ],
     "Science, Nature & Technology": [
-      "Popular Science & Science Writing",
+      "Popular Science",
       "Biology, Evolution & Life Sciences",
       "Physics, Astronomy & Cosmology",
       "Climate Change, Environment & Ecology",
       "Technology, AI & Digital Innovation",
       "Mathematics & Statistics",
-      "Anthropology, Sociology & Psychology (Popular)"
+      "Anthropology, Sociology & Psychology",
+      "Chemistry",
+      "Material Science"
     ],
     "Self-Help & Personal Development": [
       "Productivity, Habits & Time Management",
@@ -220,7 +228,8 @@
       "Architecture & Urban Design",
       "Graphic Design, Illustration & Comics",
       "Photography Technique & Coffee Table Books",
-      "Fashion & Interior Design"
+      "Fashion",
+      "Interior Design"
     ],
     "Sports & Recreation": [
       "Sports Biographies & Memoirs",

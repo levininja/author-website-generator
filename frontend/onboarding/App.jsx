@@ -1449,6 +1449,14 @@ export default function App({
     setFieldError("");
   }
 
+  // Mirrors setAnswer's side-effect: any book edit clears the stale step-level error
+  // that advance() may have set. Without this, fieldError lingers until the next
+  // Continue attempt even after the user has fixed the flagged field.
+  function updateBooks(value) {
+    setBooks(value);
+    setFieldError("");
+  }
+
   function validateCurrentStep() {
     if (step.type === "headshot") {
       return validateOptionalImage(answers.author_headshot, "Author photo");
@@ -1580,6 +1588,9 @@ export default function App({
   function goBack() {
     setFieldError("");
     setSubmitState({ type: "", message: "" });
+    // Reset so inline per-field errors don't appear on untouched fields when
+    // the user returns to the books step after previously triggering validation.
+    setShowBookValidationErrors(false);
     setStepIndex((current) => Math.max(current - 1, 0));
   }
 
@@ -1692,7 +1703,7 @@ export default function App({
               books={books}
               genreTree={genreTree}
               showValidationErrors={showBookValidationErrors}
-              onChange={setBooks}
+              onChange={updateBooks}
             />
           ) : step.type === "headshot" ? (
             <HeadshotStep

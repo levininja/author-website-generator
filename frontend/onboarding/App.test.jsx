@@ -634,6 +634,41 @@ describe("required book portfolio", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("clears the step-level error when the user edits a book field after validation", async () => {
+    const user = userEvent.setup();
+    renderApp({ initialStepId: "books" });
+
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    // fieldError is now "Complete Book 1: title is required."
+    expect(screen.getByText(/complete book 1.*title is required/i)).toBeVisible();
+
+    await user.type(screen.getByTestId("book-0-title"), "My Book");
+
+    // Editing any book field must clear the stale step-level error immediately
+    expect(screen.queryByText(/complete book 1.*title is required/i)).not.toBeInTheDocument();
+  });
+
+  it("does not show inline buy-links error on untouched field after Back navigation clears validation state", async () => {
+    const user = userEvent.setup();
+    // brand_colors sits immediately before books in the step list
+    renderApp({ initialStepId: "brand_colors" });
+
+    // Advance to books
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    // Trigger validation — sets showBookValidationErrors=true
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+    expect(screen.getByText(/complete book 1/i)).toBeVisible();
+
+    // Navigate away and return
+    await user.click(screen.getByRole("button", { name: /back/i }));
+    await user.click(screen.getByRole("button", { name: /continue/i }));
+
+    // showBookValidationErrors should have been cleared on Back, so the
+    // buy-links field must not show an error before the user touches it
+    expect(screen.queryByText(/at least one buy link is required/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("book-0-links")).toHaveAttribute("aria-invalid", "false");
+  });
+
   it("does not mark valid HTTP and HTTPS Buy links as invalid", async () => {
     const user = userEvent.setup();
     renderApp({
