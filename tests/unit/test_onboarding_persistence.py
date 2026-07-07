@@ -198,6 +198,63 @@ def test_book_can_persist_without_a_subgenre():
 
 
 @pytest.mark.django_db
+def test_headshot_is_saved_when_provided():
+    headshot = SimpleUploadedFile(
+        "headshot.png",
+        b"fake headshot bytes",
+        content_type="image/png",
+    )
+    files = uploads()
+    files["author_headshot"] = headshot
+
+    author = persist_onboarding(
+        complete_form(author_headshot_key="author_headshot"),
+        files,
+    )
+    author.refresh_from_db()
+
+    assert author.headshot.name
+    assert author.headshot.storage.exists(author.headshot.name)
+
+
+@pytest.mark.django_db
+def test_headshot_is_omitted_when_no_key_provided():
+    author = persist_onboarding(complete_form(), uploads())
+    author.refresh_from_db()
+
+    assert not author.headshot
+
+
+@pytest.mark.django_db(transaction=True)
+def test_headshot_file_is_cleaned_up_on_atomic_rollback(settings):
+    from pathlib import Path
+
+    headshot = SimpleUploadedFile(
+        "headshot.png",
+        b"fake headshot bytes",
+        content_type="image/png",
+    )
+    files = uploads()
+    files["author_headshot"] = headshot
+
+    with patch.object(
+        AuthorGenre.objects,
+        "create",
+        side_effect=RuntimeError("forced rollback"),
+    ):
+        with pytest.raises(RuntimeError, match="forced rollback"):
+            persist_onboarding(
+                complete_form(author_headshot_key="author_headshot"),
+                files,
+            )
+
+    assert Author.objects.count() == 0
+    media_root = Path(settings.MEDIA_ROOT)
+    leftover_files = list(media_root.rglob("*"))
+    assert not any(f.is_file() for f in leftover_files)
+
+
+@pytest.mark.django_db
 def test_editorial_and_other_reviews_persist_to_one_review_table():
     form = complete_form(
         books=[

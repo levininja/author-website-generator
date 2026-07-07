@@ -290,7 +290,7 @@ maintain.
 - Validate the file type and size before generation
 - Headshot is copied into the generated site's assets and rendered in its About section
 
-**Dev note:** The headshot file input already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: server-side file handling, size/type validation, and integration with site generation.
+**Implementation note:** `OnboardingForm.author_headshot_key` identifies the multipart file key; the view validates type (JPG/PNG/WebP) and size (≤10 MB) via `_validate_image`; `persist_onboarding` saves the file via `_assign_upload` and cleans it up atomically on any failure. `serialize_author` returns `headshot_url`. Persistence-layer tests cover headshot saved, headshot omitted when key absent, and file cleanup on rollback.
 
 ---
 
