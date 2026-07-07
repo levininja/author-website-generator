@@ -105,6 +105,50 @@ shared taxonomy.
 
 ---
 
+## Visual styles use one base child theme plus Design Systems
+
+AWG uses one shared Divi child theme for every generated website and delivers
+visual variation through version-controlled Design System folders. The base
+child theme owns shared PHP, the Books custom post type, accessibility,
+typography, responsive, and performance defaults. Each Design System owns the
+Theme Builder exports, page layout exports, preview assets/templates, and
+metadata needed to apply a distinct author-facing style.
+
+This keeps Divi and PHP maintenance centralized while allowing the style
+library to grow from a small alpha set to many genre-specific and
+genre-agnostic options.
+
+---
+
+## Onboarding previews use One-Page Static Templates
+
+AWG does not create or host a full WordPress demo site for every visual style
+during onboarding. Style selection uses lightweight One-Page Static Templates
+that can reflect the selected Design System, brand colors, and available
+onboarding copy.
+
+This keeps onboarding fast and cheap while still giving authors enough visual
+feedback to choose a style before full generation.
+
+---
+
+## Books are generated as a WordPress custom post type
+
+Generated WordPress sites represent books as structured content, not just
+static page sections. The base child theme registers a Books custom post type
+so archives, single-book templates, metadata, and future book-specific
+automation can share one consistent content model.
+
+---
+
+## AWG does not use Phoenix Super Theme as its foundation
+
+AWG's generated websites are based on the shared AWG Divi child theme, not
+Phoenix Super Theme. Avoiding that dependency reduces licensing uncertainty and
+long-term maintenance risk.
+
+---
+
 ## Uploaded media uses Django FileField storage
 
 Database models use Django `FileField` values as durable references to uploaded

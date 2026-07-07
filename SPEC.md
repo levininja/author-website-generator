@@ -15,6 +15,9 @@ The product is an engineering-grade, managed website service built exclusively f
 - **User account:** A future AWG account used to associate an end user with generated websites and account-management functionality. Account creation is not part of onboarding and is not a prerequisite for generation.
 - **User ID:** AWG's internal identifier for a user account. It is a randomly generated, non-sequential UUID and is not an email address or other personally identifiable information.
 - **Onboarding:** The public, single-page form where an end user supplies author, book, branding, and related website metadata and clicks the button to generate an author website. In this codebase, onboarding does not mean account registration, payment setup, or an internal administrative process.
+- **Design System:** A version-controlled visual style package used by the generator. A Design System contains metadata, Divi Theme Builder exports, page layout exports, preview assets/templates, and genre/style tags for the onboarding UI.
+- **One-Page Static Template (OPST):** A lightweight static preview used during onboarding to show the top of a homepage with the selected Design System, user colors, and available onboarding copy. OPST previews are not WordPress installs.
+- **Base child theme:** The single Divi child theme applied to every generated author website. It provides shared PHP, quality defaults, and author-specific structures such as the Books custom post type while leaving most visual styling to the selected Design System.
 - **Website generation:** Transforming validated onboarding data into the complete website code and assets needed for an AWG preview. Generation does not create production infrastructure or deploy a live WordPress site.
 - **Generated-site preview:** The generated website as viewed inside AWG at `/sites/<site_id>`. A preview is not a production WordPress installation.
 - **Production author website:** The independent WordPress/PHP website created for an author on production hosting. It is separate from AWG and from the generated-site preview.
@@ -30,7 +33,7 @@ The product is an engineering-grade, managed website service built exclusively f
 - **Marketing Funnel Integration:** Built-in connectivity for newsletters (Kit) and podcast marketing funnels.
 - **Author Platform Ecosystem:** Integrations with standard author tools like BookFunnel, StoryOrigin, BetaBooks, BetaReader.io, and Plottr. *(Solve later — not in v1)*
 - **Serialization & Monetization:** Substack integration capabilities for hosting serialized fiction and managing audience donations. *(Solve later — not in v1)*
-- Allows for user to select from many different Divi templates and for that to be passed into the tool.
+- Allows the user to choose from many Design Systems and passes that choice into the generator.
 
 ### Managed Infrastructure & Backend Automation
 
@@ -53,6 +56,10 @@ Python / Django 5.2 LTS
   - A custom **must-use plugin (mu-plugin)** specific to this system, OR
   - A custom **Divi child theme**
   - We do **not** modify WordPress core, Divi core, or any other plugin directly, so that WP/PHP updates never override our code. All custom code is modular and easy to find.
+- **Base child theme:** Every generated site uses one shared Divi child theme. It registers the Books custom post type, provides accessibility, typography, responsive, and performance defaults, and keeps project-specific PHP in one maintainable foundation.
+- **Design Systems Library:** Visual variation is delivered through version-controlled Design System folders rather than separate child themes. Each Design System has a `manifest.json`, Theme Builder exports, page layout exports, preview assets/templates, and metadata for filtering in onboarding.
+- **Generated pages:** The generator creates key pages such as Home, About, Books, and Contact from the selected Design System's exported layout JSONs, then populates those pages with the submitted author, book, branding, and marketing data.
+- **Books content model:** Generated WordPress sites model books as a custom post type rather than as unstructured page content. This supports book archives, single-book templates, metadata, and future book-specific automation.
 
 ### Infrastructure & Hosting of Websites we will Generate
 
@@ -94,6 +101,13 @@ Python / Django 5.2 LTS
 - **AI Integration:** Multi-agent orchestration (OpenClaw framework, Claude, ChatGPT/Codex) handles complex automated workflows, hooking into site generation and maintenance tasks.
 - **WP-CLI:** Used to generate and configure WordPress sites automatically over SSH. All WP configuration (install, DB import, option-setting, user creation) is scripted via WP-CLI — no manual dashboard interaction required.
 
+### Preview Architecture
+
+- During onboarding, AWG uses OPST previews rather than creating full WordPress demo sites for each visual style.
+- OPST previews render a lightweight top-of-homepage approximation using the selected Design System, the user's primary and secondary colors, and onboarding copy where available.
+- OPST previews are used to help the user choose a style before generation; they do not need production hosting, Cloudways applications, WordPress, DNS, or SSL.
+- After generation, `/sites/<site_id>` can provide a more complete AWG-hosted preview of the generated website package. That preview remains distinct from a production WordPress deployment.
+
 ### Security
 
 - AWG landing and marketing pages are public-facing.
@@ -134,6 +148,7 @@ DNS, or migration information.
 - Genre(s) selected through autocomplete backed by the three-level
   `genres.json` hierarchy
 - Primary and secondary brand colors selected together
+- Design System selected from the available style library
 
 ### Book Portfolio
 - At least one book is required
@@ -147,7 +162,7 @@ DNS, or migration information.
 - Social media links (Twitter/X, Instagram, Facebook, TikTok, YouTube,
   Goodreads — all optional and collected together)
 
-Headshots and template selection are added by later Milestone 1 features.
+Headshots and Design System selection are added by later Milestone 1 features.
 
 ## Aspirational Production Onboarding Inputs
 
@@ -155,7 +170,7 @@ Future production provisioning may additionally collect:
 
 - WordPress admin username and password for the newly created site
 - Author headshot and book portfolio
-- Divi template selection
+- Design System selection
 - Domain name (for Cloudways app configuration and Cloudflare DNS record)
 - Confirmation that nameservers point to Cloudflare
 
@@ -181,16 +196,16 @@ Orchestration app receives form data
 [ Step 1 ] Cloudways API → create new Application on the shared non-ecommerce server
         ↓
 [ Step 2 ] SSH into server → clone starter kit repo into new app folder
-           Starter kit = custom Divi child theme + mu-plugin + standard plugin list
+           Starter kit = base Divi child theme + mu-plugin + standard plugin list
         ↓
 [ Step 3 ] WP-CLI → install WordPress core
         ↓
 [ Step 4 ] WP-CLI → import starter database
-           (pre-built Divi layouts, standard pages: Home, About, Books, Contact)
+           (Design System Theme Builder exports and standard pages: Home, About, Books, Contact)
         ↓
 [ Step 5 ] WP-CLI → set all client-specific values
            (site name, tagline, author bio, colors, logo/headshot, social links,
-            Kit newsletter form, book portfolio entries, selected Divi template)
+            Kit newsletter form, Books custom post type entries, selected Design System)
         ↓
 [ Step 6 ] Cloudflare API → create A record pointing client domain → server IP
         ↓
@@ -214,10 +229,10 @@ Live site ✓
 | # | Step | Owner module | Description | Key notes |
 |---|------|-------------|-------------|-----------|
 | 1 | Create Cloudways app | `steps_cloudways.py` | Create new Application on the shared non-ecommerce server | Async — must poll until app status is `running`; raises `ProvisioningTimeoutError` on timeout |
-| 2 | Clone starter kit | `steps_wordpress.py` | SSH into server, clone Divi child theme + mu-plugin + plugin list repo into new app folder | Fails loudly on SSH auth error; requires deploy key on GitHub repo |
+| 2 | Clone starter kit | `steps_wordpress.py` | SSH into server, clone base Divi child theme + mu-plugin + plugin list repo into new app folder | Fails loudly on SSH auth error; requires deploy key on GitHub repo |
 | 3 | Install WordPress core | `steps_wordpress.py` | WP-CLI `core install` | Idempotency guard: skips if WP already installed |
-| 4 | Import starter database | `steps_wordpress.py` | WP-CLI DB import — pre-built Divi layouts and standard pages (Home, About, Books, Contact) | Skipped if Step 3 was skipped (WP already installed) |
-| 5 | Configure site | `steps_wordpress.py` | WP-CLI writes all client-specific values: site name, tagline, bio, colors, logo/headshot, social links, Kit newsletter form, book portfolio, selected Divi template | Validates written values back via `wp option get`; fails loudly on mismatch |
+| 4 | Import starter database | `steps_wordpress.py` | WP-CLI DB import — selected Design System Theme Builder exports and standard pages (Home, About, Books, Contact) | Skipped if Step 3 was skipped (WP already installed) |
+| 5 | Configure site | `steps_wordpress.py` | WP-CLI writes all client-specific values: site name, tagline, bio, colors, logo/headshot, social links, Kit newsletter form, Books custom post type entries, selected Design System | Validates written values back via `wp option get`; fails loudly on mismatch |
 | 6 | Create DNS record | `steps_dns_email.py` | Cloudflare API — create A record pointing client domain → server IP | Looks up zone ID dynamically; raises `ZoneNotFoundError` if domain not in Cloudflare |
 | — | DNS wait | `orchestrator.py` | Poll `1.1.1.1` (DNS-over-HTTPS) until domain resolves to server IP | Configurable timeout (default 10 min); UI shows "Waiting for DNS propagation" |
 | 7 | Attach domain + SSL | `steps_cloudways.py` | Cloudways API — attach client domain to app and trigger Let's Encrypt SSL provisioning | Must run after DNS propagates; Let's Encrypt requires domain to resolve first |

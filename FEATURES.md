@@ -4,7 +4,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 
 ## ID Tracker
 
-- Latest feature ID: `F023`
+- Latest feature ID: `F026`
 - Latest task ID: `T003`
 - Latest research ID: `R001`
 
@@ -40,16 +40,63 @@ payment processing.
 
 ---
 
-### F004 — Select a Divi template with visual preview
+### F004 — Select a Design System with OPST visual preview
 
 **Type:** Feature
-**As** an end user, I can browse available Divi templates, click each one to see a screenshot of what a site built with that template looks like, and select the one I want applied to the generated site.
+**As** an end user, I can browse available Design Systems, preview how each style affects the top of my homepage, and select the one I want applied to the generated site.
 
-- Original spec had this as a plain dropdown — this feature upgrades it to a visual picker (clickable thumbnails with screenshots)
-- Selected template value is included in `OnboardingForm` and passed to F005
-- The generator uses the selected template as the basis for the generated website code
+- Original spec had this as a plain dropdown — this feature upgrades it to a visual style picker backed by the Design Systems Library
+- The preview uses a One-Page Static Template (OPST), not a full WordPress demo site
+- OPST previews dynamically apply the user's primary and secondary brand colors
+- OPST previews use onboarding copy where available and safe fallback copy where fields are still blank
+- Selected Design System value is included in `OnboardingForm` and passed to F005
+- The generator uses the selected Design System as the basis for the generated website code
 
-**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: upgrade to a visual clickable thumbnail picker with screenshot assets.
+**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Remaining work: replace the hardcoded template list with Design System metadata and implement a visual picker with OPST previews.
+
+---
+
+### F024 — Create the Design Systems Library
+
+**Type:** Feature
+**As** a developer, I can create, version, and manage multiple visual styles so AWG can expand its style catalog without creating separate child themes.
+
+- Store each Design System in its own version-controlled folder, such as `design-systems/clean-literary/`
+- Each Design System includes `manifest.json`, Theme Builder exports, page layout exports, and preview assets/templates
+- `manifest.json` includes style name, genre tags, style metadata, and any values needed by the onboarding picker
+- Start with 3 template layouts for v1, scale to 8–12 Design Systems for beta, and keep the structure capable of supporting 20–50+ styles long term
+- Include both genre-specific and genre-agnostic styles
+- Invalid or incomplete manifests fail validation with actionable developer errors
+- Tests cover manifest parsing, required fields, invalid manifests, and lookup by selected Design System ID
+
+---
+
+### F025 — Build the base WordPress child theme foundation
+
+**Type:** Feature
+**As** a developer, I can apply one shared Divi child theme to every generated website so core behavior and quality defaults are maintained in one place.
+
+- Build a single AWG base Divi child theme used by every generated site
+- Do not base the child theme on Phoenix Super Theme
+- Register the Books custom post type in the base child theme
+- Include strong defaults for accessibility, typography, responsive behavior, and performance
+- Keep visual styling minimal; most style variation belongs to Design Systems
+- Keep custom PHP modular and separate from WordPress core, Divi core, and third-party plugin code
+- Tests or validation cover child-theme packaging, required files, and Books custom post type registration
+
+---
+
+### F026 — Generate structured WordPress pages and book content
+
+**Type:** Feature
+**As** an end user, my generated website includes the key author pages and structured book content so I start with a usable site instead of a blank theme.
+
+- Generate key pages such as Home, About, Books, and Contact from the selected Design System's exported layout JSONs
+- Populate page sections with submitted author, book, brand, newsletter, and social data where available
+- Store books as Books custom post type records rather than only static page sections
+- Apply Theme Builder templates for global header, footer, archive, and single-book consistency
+- Users can freely edit, delete, or add sections afterward in Divi
+- Tests cover page generation, selected Design System layout usage, book custom post creation, missing optional content, and Theme Builder template application
 
 ---
 
@@ -60,11 +107,11 @@ payment processing.
 
 - Milestone 1 generation supports standard, non-ecommerce author websites only
 - `generate_site(form)` validates the submitted onboarding data and generates the full website code, including all pages, content, styling, and assets required for the preview
-- Generation uses the selected template and applies the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
+- Generation uses the selected Design System, base child theme, Theme Builder exports, page layout exports, and submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
 - The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
 - Generation failures return a safe, human-readable error and do not create a partial site record
 - Files: `generator/site_generation.py`, `tests/unit/test_site_generation.py`
-- Tests: complete generation, optional-field handling, invalid input, template/content mapping, and generation failure
+- Tests: complete generation, optional-field handling, invalid input, Design System/content mapping, and generation failure
 
 ---
 
