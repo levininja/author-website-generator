@@ -45,19 +45,6 @@ shopping carts, or payment processing.
 ---
 
 
-### F025 — Set up the base WordPress site scaffold
-
-**Type:** Feature
-**As** a developer, I can generate a valid, self-contained WordPress site folder from onboarding data so that every subsequent generation feature has a working base to build on.
-
-- Install WordPress core into a dedicated generated-site folder
-- Apply baseline WordPress configuration: site name, tagline, admin credentials, and permalink structure
-- Keep the generated site folder structure clean and self-contained; it must not depend on production hosting, Cloudways, DNS, or SSL
-- Keep custom code modular and separate from WordPress core and third-party plugin code
-- Tests or validation cover: WP core installation, required files present, baseline configuration applied
-
----
-
 ### F033 — Register the Books custom post type
 
 **Type:** Feature
@@ -413,6 +400,19 @@ maintain.
 ---
 
 ## Done
+
+### F025 — Set up the base WordPress site scaffold
+
+**Type:** Feature
+**As** a developer, I can generate a valid, self-contained WordPress site folder from onboarding data so that every subsequent generation feature has a working base to build on.
+
+- Install WordPress core into a dedicated generated-site folder
+- Apply baseline WordPress configuration: site name, tagline, admin credentials, and permalink structure
+- Keep the generated site folder structure clean and self-contained; it must not depend on production hosting, Cloudways, DNS, or SSL
+- Keep custom code modular and separate from WordPress core and third-party plugin code
+- Tests or validation cover: WP core installation, required files present, baseline configuration applied
+
+---
 
 ### F021 — Set up Django application scaffold
 
