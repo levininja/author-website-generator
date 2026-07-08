@@ -909,3 +909,20 @@ noscript {
     gap: 6px;
   }
 }
+
+
+.classic-template-step {
+  padding: 16px 0;
+}
+
+.classic-template-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.classic-template-coming-soon {
+  font-size: 0.875rem;
+  color: var(--muted, #6b7280);
+  margin: 0;
+}

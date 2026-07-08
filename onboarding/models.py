@@ -99,6 +99,7 @@ class Author(models.Model):
     primary_color = models.CharField(max_length=7, blank=True)
     secondary_color = models.CharField(max_length=7, blank=True)
     newsletter_link = models.CharField(max_length=2048, blank=True)
+    selected_template = models.CharField(max_length=100, blank=True)
     social_twitter = models.URLField(max_length=2048, blank=True)
     social_instagram = models.URLField(max_length=2048, blank=True)
     social_facebook = models.URLField(max_length=2048, blank=True)

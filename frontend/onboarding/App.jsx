@@ -5,14 +5,6 @@ const IMAGE_LIMIT = 10 * 1024 * 1024;
 const PDF_LIMIT = 20 * 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-const TEMPLATE_OPTIONS = [
-  { name: "Classic Author",      previewUrl: "/static/onboarding/template-previews/classic-author.png" },
-  { name: "Modern Minimalist",   previewUrl: "/static/onboarding/template-previews/modern-minimalist.png" },
-  { name: "Bold & Bright",       previewUrl: "/static/onboarding/template-previews/bold-bright.png" },
-  { name: "Cozy Romance",        previewUrl: "/static/onboarding/template-previews/cozy-romance.png" },
-  { name: "Thriller Dark",       previewUrl: "/static/onboarding/template-previews/thriller-dark.png" },
-  { name: "Literary Fiction",    previewUrl: "/static/onboarding/template-previews/literary-fiction.png" },
-];
 
 const STEPS = [
   {
@@ -81,8 +73,8 @@ const STEPS = [
   },
   {
     id: "selected_template",
-    title: "Choose your website template",
-    help: "Click a template to select it. Each one gives your site a distinct look.",
+    title: "Website Templates",
+    help: "Your site will be built on the Classic template.",
     type: "template",
   },
   {
@@ -121,7 +113,7 @@ const EMPTY_ANSWERS = {
   genres: [],
   primary_color: "#2563eb",
   secondary_color: "#64748b",
-  selected_template: null,
+  selected_template: "Classic",
   newsletter_link: "",
   social_twitter: "",
   social_instagram: "",
@@ -650,22 +642,13 @@ function GenreStep({ selected, genreTree, error, onChange }) {
 }
 
 
-function TemplatePicker({ value, onChange, templates }) {
+function ClassicTemplateStep() {
   return (
-    <div className="template-grid">
-      {templates.map(({ name, previewUrl }) => (
-        <button
-          key={name}
-          type="button"
-          className={`template-card${value === name ? " selected" : ""}`}
-          data-testid={`template-card-${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-")}`}
-          aria-pressed={value === name}
-          onClick={() => onChange(name)}
-        >
-          <img src={previewUrl} alt={`${name} template preview`} />
-          <div className="template-card-label">{name}</div>
-        </button>
-      ))}
+    <div className="classic-template-step">
+      <p className="classic-template-name" data-testid="classic-template-name">Classic</p>
+      <p className="classic-template-coming-soon" data-testid="classic-template-coming-soon">
+        More website templates are coming soon.
+      </p>
     </div>
   );
 }
@@ -1739,11 +1722,7 @@ export default function App({
               <ColorField id="secondary" label="Secondary brand color" value={answers.secondary_color} onChange={(value) => setAnswer("secondary_color", value)} />
             </div>
           ) : step.type === "template" ? (
-            <TemplatePicker
-              value={answers.selected_template}
-              onChange={(value) => setAnswer("selected_template", value)}
-              templates={TEMPLATE_OPTIONS}
-            />
+            <ClassicTemplateStep />
           ) : step.type === "books" ? (
             <BookPortfolioStep
               books={books}

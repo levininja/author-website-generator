@@ -453,6 +453,41 @@ describe("wording, navigation, and grouped steps", () => {
       screen.getByRole("heading", { name: /what genres do you write/i }),
     ).toBeVisible();
   });
+
+  it("shows the 'Website Templates' heading on the template step", () => {
+    renderApp({ initialStepId: "selected_template" });
+
+    expect(screen.getByRole("heading", { name: /website templates/i })).toBeVisible();
+  });
+
+  it("shows coming-soon copy on the template step", () => {
+    renderApp({ initialStepId: "selected_template" });
+
+    expect(
+      screen.getByText(/more website templates are coming soon/i),
+    ).toBeVisible();
+  });
+
+  it("does not render image card elements on the template step", () => {
+    const { container } = renderApp({ initialStepId: "selected_template" });
+
+    expect(container.querySelector(".template-card")).toBeNull();
+  });
+
+  it("sets selected_template to 'Classic' in the payload after continuing from the template step", () => {
+    const payload = onboarding.buildPayload(
+      requiredAnswers({ selected_template: "Classic" }),
+      [completeBook()],
+    );
+
+    expect(payload.selected_template).toBe("Classic");
+  });
+
+  it("offers Skip on the template step", () => {
+    renderApp({ initialStepId: "selected_template" });
+
+    expect(screen.getByRole("button", { name: /^skip$/i })).toBeVisible();
+  });
 });
 
 

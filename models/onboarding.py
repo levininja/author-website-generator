@@ -18,6 +18,10 @@ from pydantic import (
 
 GenreTree = dict[str, dict[str, list[str]]]
 
+DIVI_TEMPLATES = [
+    "Classic",
+]
+
 DOMAIN_PATTERN = re.compile(
     r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
     r"[a-z]{2,63}$",
@@ -211,6 +215,7 @@ class OnboardingForm(OnboardingBaseModel):
     secondary_color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
     newsletter_link: str | None = None
     author_headshot_key: str | None = None
+    selected_template: str | None = None
     social_links: SocialLinks = Field(default_factory=SocialLinks)
     books: list[BookEntry] = Field(min_length=1)
 
@@ -228,11 +233,19 @@ class OnboardingForm(OnboardingBaseModel):
         "author_bio_long",
         "newsletter_link",
         "author_headshot_key",
+        "selected_template",
         mode="before",
     )
     @classmethod
     def normalize_blank_optional_text(cls, value: Any) -> Any:
         return None if isinstance(value, str) and not value.strip() else value
+
+    @field_validator("selected_template", mode="after")
+    @classmethod
+    def validate_selected_template(cls, value: str | None) -> str | None:
+        if value is not None and value not in DIVI_TEMPLATES:
+            raise ValueError(f"Unknown template: {value!r}.")
+        return value
 
     @field_validator("newsletter_link", mode="after")
     @classmethod

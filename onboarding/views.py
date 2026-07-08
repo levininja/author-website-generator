@@ -19,12 +19,7 @@ from onboarding.services import (
 )
 
 DIVI_TEMPLATES = [
-    "Classic Author",
-    "Modern Minimalist",
-    "Bold & Bright",
-    "Cozy Romance",
-    "Thriller Dark",
-    "Literary Fiction",
+    "Classic",
 ]
 
 IMAGE_LIMIT = 10 * 1024 * 1024

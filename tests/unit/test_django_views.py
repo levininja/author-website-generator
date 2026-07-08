@@ -660,3 +660,23 @@ def test_submission_cleans_up_database_and_files_when_nested_persistence_fails(
     assert response.status_code == 500
     assert Author.objects.count() == 0
     assert not list(settings.MEDIA_ROOT.rglob("*"))
+
+
+def test_submission_accepts_valid_selected_template(client):
+    payload = valid_payload(selected_template="Classic")
+    response = post_onboarding(client, payload)
+
+    assert response.status_code == 201
+
+
+def test_submission_accepts_submission_without_selected_template(client):
+    response = post_onboarding(client)
+
+    assert response.status_code == 201
+
+
+def test_submission_rejects_unknown_template(client):
+    payload = valid_payload(selected_template="NonExistent Template")
+    response = post_onboarding(client, payload)
+
+    assert response.status_code == 400

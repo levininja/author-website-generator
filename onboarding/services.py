@@ -152,6 +152,7 @@ def persist_onboarding(form, files, replace_author=None):
                 primary_color=_optional_text(form.primary_color),
                 secondary_color=_optional_text(form.secondary_color),
                 newsletter_link=_optional_text(form.newsletter_link),
+                selected_template=_optional_text(form.selected_template),
                 social_twitter=_optional_text(social.twitter),
                 social_instagram=_optional_text(social.instagram),
                 social_facebook=_optional_text(social.facebook),
@@ -349,6 +350,7 @@ def serialize_author(author):
         "primary_color": author.primary_color,
         "secondary_color": author.secondary_color,
         "newsletter_link": author.newsletter_link,
+        "selected_template": author.selected_template,
         "headshot_url": _file_url(author.headshot),
         "social_links": {
             name: value

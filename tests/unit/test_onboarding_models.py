@@ -376,3 +376,33 @@ def test_blank_author_headshot_key_normalizes_to_none():
 def test_author_headshot_key_is_stored_when_provided():
     form = validate_form(minimal_form_data(author_headshot_key="author_headshot"))
     assert form.author_headshot_key == "author_headshot"
+
+
+def test_selected_template_is_optional():
+    form = validate_form(minimal_form_data())
+    assert form.selected_template is None
+
+
+def test_blank_selected_template_normalizes_to_none():
+    form = validate_form(minimal_form_data(selected_template=""))
+    assert form.selected_template is None
+
+    form = validate_form(minimal_form_data(selected_template="   "))
+    assert form.selected_template is None
+
+
+def test_valid_template_name_is_accepted():
+    form = validate_form(minimal_form_data(selected_template="Classic"))
+    assert form.selected_template == "Classic"
+
+
+def test_old_template_names_are_rejected():
+    for name in ["Classic Author", "Modern Minimalist", "Bold & Bright",
+                 "Cozy Romance", "Thriller Dark", "Literary Fiction"]:
+        with pytest.raises(ValidationError):
+            validate_form(minimal_form_data(selected_template=name))
+
+
+def test_invalid_template_name_is_rejected():
+    with pytest.raises(ValidationError):
+        validate_form(minimal_form_data(selected_template="NonExistent Template"))

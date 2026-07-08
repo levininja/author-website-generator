@@ -308,3 +308,20 @@ def test_editorial_and_other_reviews_persist_to_one_review_table():
     assert reviews[1].photo_path
     assert reviews[1].stars == 4
     assert [review.display_position for review in reviews] == [1, 1]
+
+
+@pytest.mark.django_db
+def test_selected_template_is_persisted():
+    form = complete_form(selected_template="Classic")
+    author = persist_onboarding(form, uploads())
+    author.refresh_from_db()
+
+    assert author.selected_template == "Classic"
+
+
+@pytest.mark.django_db
+def test_selected_template_defaults_to_blank_when_omitted():
+    author = persist_onboarding(complete_form(), uploads())
+    author.refresh_from_db()
+
+    assert author.selected_template == ""
