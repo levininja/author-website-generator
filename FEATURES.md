@@ -31,7 +31,7 @@ app, and AWG generates a complete WordPress site. Locally, only one generated
 site is ever live at a time: each new generation deletes the previous one and
 hosts the new one on a local PHP server, on its own port — separate from the
 onboarding app's port and the generation app's port (each of the latter two is
-its own React SPA).
+its own Django + React app).
 
 Milestone 1 stops at generation and local preview. It does not include payments,
 billing, website maintenance, admin pages, production deployment, customer
@@ -48,7 +48,7 @@ payment processing.
 - v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
 - The page shows one line of copy noting more website templates are coming soon
 - No visual preview of the template is shown at this stage
-- Selected template value is included in `OnboardingForm` and passed to F005
+- Selected template value is included in `OnboardingForm` and passed to the generation flow
 - A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
 
 **Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Replace it with a single hardcoded "Classic" option under the "Website Templates" label plus the one-line coming-soon copy; no picker UI or preview needed.
@@ -58,10 +58,10 @@ payment processing.
 ### F025 — Build the base WordPress child theme foundation + Register Books custom post type
 
 **Type:** Feature
-**As** a developer, I can apply one shared Divi child theme to every generated website so core behavior and quality defaults are maintained in one place.
+**As** a developer, I can apply one shared base WordPress site foundation to every generated website so core behavior and quality defaults are maintained in one place.
 
-- Build a single AWG base Divi child theme used by every generated site
-- Register a Books custom post type in the base child theme, with fields covering every book detail captured in onboarding:
+- Build a single AWG base WordPress site foundation used by every generated site
+- Register a Books custom post type in the base site foundation, with fields covering every book detail captured in onboarding:
   - title, cover image, description, at least one buy link, category, genre, subgenre
   - standalone/series flag; when part of a series: series name, book number, total books, series-complete flag
   - repeatable editorial reviews (publication name) and reader reviews (reviewer name, optional credentials, optional photo, optional star rating, optional original-review link)
@@ -69,8 +69,8 @@ payment processing.
   - optional reader-fit copy, optional sample chapter PDF and its original filename
   - one-based onboarding position (for ordering books on the site)
 - Don't do any custom visual styling or include any other custom coding outside of the custom post type for now
-- Keep custom PHP modular and separate from WordPress core, Divi core, and third-party plugin code
-- Tests or validation cover child-theme packaging, required files, and Books custom post type registration, including its fields
+- Keep custom PHP modular and separate from WordPress core and third-party plugin code
+- Tests or validation cover base-site packaging, required files, and Books custom post type registration, including its fields
 
 ---
 
@@ -133,30 +133,19 @@ payment processing.
 
 ---
 
-### F030 — Split website generation into its own app
+### F030 — Build the Generation app and wire generation end-to-end
 
 **Type:** Feature
-**As** a developer, I can run website generation as its own app on its own port so onboarding, generation, and the generated WordPress preview don't collide.
+**As** a developer, I can run website generation as its own Django + React app on its own port so onboarding, generation, and the generated WordPress preview don't collide, and as an end user I can trigger generation and see the result.
 
 - The existing onboarding app keeps the multi-step form through the final review/confirmation page
-- Clicking "Generate" navigates from the onboarding app to a new Generation app (its own React SPA, its own port)
-- The Generation app owns the `POST /generate` call, the result/error screen (F007), and the link to the generated site preview (F020)
-- Tests cover the handoff from onboarding to the Generation app and the Generation app's own request/result handling
-
----
-
-### F005 — Generate the full author website code
-
-**Type:** Feature
-**As** an end user, I want my submitted form data turned into a complete author website so that I can review the generated result.
-
-- Milestone 1 generation supports standard, non-ecommerce author websites only
-- `generate_site(form)` validates the submitted onboarding data and generates the full website code, including all pages, content, styling, and assets required for the preview
-- Generation uses the base child theme (F025), generated pages and book content (F026, F027), Divi installation and configuration (F028), header/nav and footer (F029), and the submitted author identity, biographies, branding, headshot, books, newsletter information, and social links
-- The generated result is self-contained and does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
+- Clicking "Generate" navigates from the onboarding app to a new Generation app (its own Django + React app, its own port)
+- The Generation app owns `POST /generate`, the result/error screen (F007), and the link to the generated site preview (F020)
+- Generation validates the submitted onboarding data before beginning any site construction
+- Generation supports standard, non-ecommerce author websites only
+- The generated result is self-contained: it does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
 - Generation failures return a safe, human-readable error and do not create a partial site record
-- Files: `generator/site_generation.py`, `tests/unit/test_site_generation.py`
-- Tests: complete generation, optional-field handling, invalid input, template/content mapping, and generation failure
+- Tests cover: the handoff from onboarding to the Generation app, the Generation app's own request/result handling, complete generation with all onboarding fields, optional-field handling, invalid input rejection, and generation failure (no partial record created)
 
 ---
 
@@ -187,6 +176,13 @@ payment processing.
 
 ---
 
+## Backlog
+
+---
+
+The backlog contains work that is useful after Milestone 1 but is not required
+to generate and preview a standard, non-ecommerce website inside AWG.
+
 ### F019 — Protect website generation with reCAPTCHA v3
 
 **Type:** Feature
@@ -200,13 +196,6 @@ payment processing.
 - Tests mock the verification API and cover valid, missing, invalid, low-score, action mismatch, hostname mismatch, and service-failure responses
 
 ---
-
-## Backlog
-
----
-
-The backlog contains work that is useful after Milestone 1 but is not required
-to generate and preview a standard, non-ecommerce website inside AWG.
 
 ### R001 — Document Divi option keys for production site configuration
 
@@ -244,7 +233,7 @@ to generate and preview a standard, non-ecommerce website inside AWG.
 - The preview uses a One-Page Static Template (OPST), not a full WordPress demo site
 - OPST previews dynamically apply the user's primary and secondary brand colors
 - OPST previews use onboarding copy where available and safe fallback copy where fields are still blank
-- Selected template value is included in `OnboardingForm` and passed to F005
+- Selected template value is included in `OnboardingForm` and passed to the generation flow
 - The generator uses the selected template as the basis for the generated website code
 
 ---
@@ -437,7 +426,7 @@ Uploaded images are displayed on the page, and each sample chapter PDF is
 available through a download link.
 **Deliverable:** After reviewing the database-loaded author and books, the user can
 click Generate and call `POST /generate` without error. F002 does not generate
-website code; the endpoint is intentionally a no-op until F005.
+website code; the endpoint is intentionally a no-op until F030.
 
 - Each book requires title, cover image, description, at least one buy link,
   category, genre, and standalone/series information; subgenre is optional
@@ -486,7 +475,7 @@ implemented. `POST /onboarding` atomically persists the author and books;
 `GET /authors/<author_id>` and `GET /authors/<author_id>/books` reload the
 separate resources for review; and `POST /generate` currently verifies the
 author exists and returns success without generating anything. Passing saved
-book data through actual website generation remains part of F005.
+book data through actual website generation remains part of F030.
 
 ---
 
