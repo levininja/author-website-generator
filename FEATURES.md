@@ -414,22 +414,6 @@ maintain.
 
 ## Done
 
-
----
-
-### F004 — Select a Website Template
-
-**Type:** Feature
-**As** an end user, I can select which website template AWG will use to generate my site.
-
-- v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
-- The page shows one line of copy noting more website templates are coming soon
-- No visual preview of the template is shown at this stage
-- Selected template value is included in `OnboardingForm` and passed to the generation flow
-- A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
-
----
-
 ### F021 — Set up Django application scaffold
 
 **Type:** Feature
