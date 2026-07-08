@@ -188,18 +188,17 @@ payment processing.
 
 ---
 
-### F034 — Polish the generated site for demo readiness
+### F034 — Polish the generated site for informal user testing
 
 **Type:** Feature
-**As** the product owner, the generated site looks presentable enough to show a potential client so I can use it for demos before production deployment exists.
+**As** the product owner, the generated site looks good enough to put in front of author friends for informal user testing — no broken layouts, no missing data, no obvious rough edges that would distract from the feedback I'm trying to get.
 
 - Review the full generated site end-to-end: Home, About, Books, per-book pages, header/nav, footer
 - All onboarding data must be visible and correctly placed — no missing fields, broken images, or placeholder copy
-- Fix any layout, styling, or rendering issues that would make the site look unfinished to a client
-- Brand colors are applied visibly (not just as swatches)
+- Brand colors are applied visibly
 - Navigation links work; social links render with icons
-- No acceptance threshold for pixel-perfection — the bar is "a client could look at this and understand what their site would be"
-- This ticket is explicitly a human review + fix pass, not automated test coverage
+- Bar is not pixel-perfection — it's "an author friend can use this without being distracted by something clearly broken"
+- This ticket is a human review + fix pass, not automated test coverage
 - Depends on F029 (all generation features complete)
 
 ---
