@@ -42,23 +42,8 @@ shopping carts, or payment processing.
 1. A user can complete the onboarding form, click Generate, and see a working WordPress site running locally with all submitted data visible and correctly placed
 2. The generated site is presentable enough for informal user testing — no broken layouts, missing fields, or obviously unfinished UI
 3. One generated site has been manually deployed to a live URL following a documented runbook
-
 ---
 
-### F004 — Select a Website Template
-
-**Type:** Feature
-**As** an end user, I can select which website template AWG will use to generate my site.
-
-- v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
-- The page shows one line of copy noting more website templates are coming soon
-- No visual preview of the template is shown at this stage
-- Selected template value is included in `OnboardingForm` and passed to the generation flow
-- A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
-
-**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Replace it with a single hardcoded "Classic" option under the "Website Templates" label plus the one-line coming-soon copy; no picker UI or preview needed.
-
----
 
 ### F025 — Set up the base WordPress site scaffold
 
@@ -96,7 +81,7 @@ shopping carts, or payment processing.
 **Type:** Feature
 **As** an end user, my generated website includes the key author pages and structured book content so I start with a usable site instead of a blank theme.
 
-- Generate key pages: Home, About, Books, and a single generic Book Detail Page, using the v1 "Classic" template layout
+- Generate key pages: Home, About, Books, Contact, and a single generic Book Detail Page, using the v1 "Classic" template layout
 - In this version, those pages will be stubs mostly, not final products
 - Every field that was submitted in onboarding should be displayed on a page:
   - Author information should be put on the About page (bios, picture, etc.)
@@ -432,6 +417,19 @@ maintain.
 
 ---
 
+### F004 — Select a Website Template
+
+**Type:** Feature
+**As** an end user, I can select which website template AWG will use to generate my site.
+
+- v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
+- The page shows one line of copy noting more website templates are coming soon
+- No visual preview of the template is shown at this stage
+- Selected template value is included in `OnboardingForm` and passed to the generation flow
+- A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
+
+---
+
 ### F021 — Set up Django application scaffold
 
 **Type:** Feature
@@ -575,3 +573,18 @@ hierarchy paths and removable selections rather than a full checkbox list.
 Successful onboarding stores F001 fields under an author UUID and preserves
 author genre selection order through category-, genre-, and subgenre-selection
 tables. Book records and uploaded files remain F002.
+
+---
+
+### F004 — Select a Website Template
+
+**Type:** Feature
+**As** an end user, I can select which website template AWG will use to generate my site.
+
+- v1 ships exactly one selectable template, labeled "Classic," under the user-facing label "Website Templates"
+- The page shows one line of copy noting more website templates are coming soon
+- No visual preview of the template is shown at this stage
+- Selected template value is included in `OnboardingForm` and passed to the generation flow
+- A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
+
+**Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Replace it with a single hardcoded "Classic" option under the "Website Templates" label plus the one-line coming-soon copy; no picker UI or preview needed.
