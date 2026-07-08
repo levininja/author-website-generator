@@ -4,7 +4,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 
 ## ID Tracker
 
-- Latest feature ID: `F032`
+- Latest feature ID: `F035`
 - Latest task ID: `T003`
 - Latest research ID: `R001`
 
@@ -55,22 +55,34 @@ payment processing.
 
 ---
 
-### F025 — Build the base WordPress child theme foundation + Register Books custom post type
+### F025 — Set up the base WordPress site scaffold
 
 **Type:** Feature
-**As** a developer, I can apply one shared base WordPress site foundation to every generated website so core behavior and quality defaults are maintained in one place.
+**As** a developer, I can generate a valid, self-contained WordPress site folder from onboarding data so that every subsequent generation feature has a working base to build on.
 
-- Build a single AWG base WordPress site foundation used by every generated site
-- Register a Books custom post type in the base site foundation, with fields covering every book detail captured in onboarding:
+- Install WordPress core into a dedicated generated-site folder
+- Apply baseline WordPress configuration: site name, tagline, admin credentials, and permalink structure
+- Keep the generated site folder structure clean and self-contained; it must not depend on production hosting, Cloudways, DNS, or SSL
+- Keep custom code modular and separate from WordPress core and third-party plugin code
+- Tests or validation cover: WP core installation, required files present, baseline configuration applied
+
+---
+
+### F033 — Register the Books custom post type
+
+**Type:** Feature
+**As** a developer, the generated WordPress site has a Books custom post type that mirrors every book field collected in onboarding, so book content is structured and queryable rather than embedded in static page copy.
+
+- Register a Books custom post type with fields covering every book detail captured in onboarding:
   - title, cover image, description, at least one buy link, category, genre, subgenre
   - standalone/series flag; when part of a series: series name, book number, total books, series-complete flag
   - repeatable editorial reviews (publication name) and reader reviews (reviewer name, optional credentials, optional photo, optional star rating, optional original-review link)
   - starred-review flag, award icons
   - optional reader-fit copy, optional sample chapter PDF and its original filename
   - one-based onboarding position (for ordering books on the site)
-- Don't do any custom visual styling or include any other custom coding outside of the custom post type for now
-- Keep custom PHP modular and separate from WordPress core and third-party plugin code
-- Tests or validation cover base-site packaging, required files, and Books custom post type registration, including its fields
+- Custom post type registration code is modular and separate from WordPress core and third-party plugin code
+- Depends on F025
+- Tests or validation cover: custom post type registration, all fields present and correctly typed
 
 ---
 
@@ -86,7 +98,7 @@ payment processing.
   - The selected color swatches should be displayed on the Home page as swatches of color
   - The book information should be displayed on the Book Detail Page (book title, genre, book cover, series information, etc.) — this is one generic page shared by all books in v1; the URL is not customized per book (per-book pages are a follow-up, see F027)
   - Any other fields from onboarding that don't make sense to put on the author or book pages should be put on the Home page (genre, newsletter link, social links, etc.)
-- Store books as Books custom post type records (F025) rather than only static page sections
+- Store books as Books custom post type records (F033) rather than only static page sections
 - Divi does NOT need to be installed yet at this stage (see F028)
 - Header/nav and footer generation is out of scope here (see F029)
 - The selected template has no effect on layout at this stage, except to display "Classic" by name on the Home page
@@ -173,6 +185,35 @@ payment processing.
 - On failure: show a specific, actionable error plus a dismiss button
 - No internal exception details or stack traces are exposed to the user
 - Error display persists until the user dismisses it via X or resubmits
+
+---
+
+### F034 — Polish the generated site for demo readiness
+
+**Type:** Feature
+**As** the product owner, the generated site looks presentable enough to show a potential client so I can use it for demos before production deployment exists.
+
+- Review the full generated site end-to-end: Home, About, Books, per-book pages, header/nav, footer
+- All onboarding data must be visible and correctly placed — no missing fields, broken images, or placeholder copy
+- Fix any layout, styling, or rendering issues that would make the site look unfinished to a client
+- Brand colors are applied visibly (not just as swatches)
+- Navigation links work; social links render with icons
+- No acceptance threshold for pixel-perfection — the bar is "a client could look at this and understand what their site would be"
+- This ticket is explicitly a human review + fix pass, not automated test coverage
+- Depends on F029 (all generation features complete)
+
+---
+
+### F035 — First local-to-production deployment
+
+**Type:** Feature
+**As** the product owner, I can deploy a generated site to production hosting so that Milestone 1 ends with a live, accessible author website and I can validate the full end-to-end pipeline.
+
+- Define the minimum infrastructure needed to get one generated site live: hosting account, domain, DNS, SSL
+- Establish the manual or semi-automated steps to push a locally generated WordPress site to production
+- Document the deployment steps taken so they can be scripted later (feeds into F015–F017 in the backlog)
+- This ticket is complete when a generated site is live at a real URL and accessible in a browser
+- Scope is intentionally narrow: one site, one deployment, done manually if needed
 
 ---
 
