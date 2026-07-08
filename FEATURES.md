@@ -33,10 +33,15 @@ hosts the new one on a local PHP server, on its own port — separate from the
 onboarding app's port and the generation app's port (each of the latter two is
 its own Django + React app).
 
-Milestone 1 stops at generation and local preview. It does not include payments,
-billing, website maintenance, admin pages, production deployment, customer
-domains, DNS, SSL, production hosting, ecommerce features, shopping carts, or
-payment processing.
+Milestone 1 stops at generation, local preview, and a first manual production
+deployment for informal user testing. It does not include payments, billing,
+website maintenance, admin pages, automated deployment, ecommerce features,
+shopping carts, or payment processing.
+
+**Milestone 1 is done when:**
+1. A user can complete the onboarding form, click Generate, and see a working WordPress site running locally with all submitted data visible and correctly placed
+2. The generated site is presentable enough for informal user testing — no broken layouts, missing fields, or obviously unfinished UI
+3. One generated site has been manually deployed to a live URL following a documented runbook
 
 ---
 
