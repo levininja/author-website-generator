@@ -4,7 +4,7 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 
 ## ID Tracker
 
-- Latest feature ID: `F035`
+- Latest feature ID: `F036`
 - Latest task ID: `T003`
 - Latest research ID: `R001`
 
@@ -206,14 +206,14 @@ payment processing.
 
 ### F035 — First local-to-production deployment
 
-**Type:** Feature
+**Type:** Task
 **As** the product owner, I can deploy a generated site to production hosting so that Milestone 1 ends with a live, accessible author website and I can validate the full end-to-end pipeline.
 
-- Define the minimum infrastructure needed to get one generated site live: hosting account, domain, DNS, SSL
-- Establish the manual or semi-automated steps to push a locally generated WordPress site to production
-- Document the deployment steps taken so they can be scripted later (feeds into F015–F017 in the backlog)
-- This ticket is complete when a generated site is live at a real URL and accessible in a browser
-- Scope is intentionally narrow: one site, one deployment, done manually if needed
+- Deploy one generated site to production manually — no automation required
+- Document every step taken (hosting setup, file transfer, WP config, DNS, SSL) in enough detail that a developer could follow them later to build an automation script
+- Deliverable: a live site at a real URL, plus a deployment runbook committed to the repo
+- A follow-on backlog ticket (F036) will turn that runbook into an automation script
+- Scope is intentionally narrow: one site, done by hand, documented
 
 ---
 
@@ -223,6 +223,17 @@ payment processing.
 
 The backlog contains work that is useful after Milestone 1 but is not required
 to generate and preview a standard, non-ecommerce website inside AWG.
+
+### F036 — Automate the production deployment runbook
+
+**Type:** Feature
+**As** a developer, I can deploy a generated site to production by running a script instead of following manual steps, so that future deployments are fast and repeatable.
+
+- Depends on F035 (the manual runbook must exist first)
+- Convert the F035 deployment runbook into an automation script covering hosting setup, file transfer, WP configuration, DNS, and SSL
+- Feeds into and may overlap with F015–F017 in the backlog
+
+---
 
 ### F019 — Protect website generation with reCAPTCHA v3
 
