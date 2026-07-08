@@ -45,24 +45,6 @@ shopping carts, or payment processing.
 ---
 
 
-### F033 — Register the Books custom post type
-
-**Type:** Feature
-**As** a developer, the generated WordPress site has a Books custom post type that mirrors every book field collected in onboarding, so book content is structured and queryable rather than embedded in static page copy.
-
-- Register a Books custom post type with fields covering every book detail captured in onboarding:
-  - title, cover image, description, at least one buy link, category, genre, subgenre
-  - standalone/series flag; when part of a series: series name, book number, total books, series-complete flag
-  - repeatable editorial reviews (publication name) and reader reviews (reviewer name, optional credentials, optional photo, optional star rating, optional original-review link)
-  - starred-review flag, award icons
-  - optional reader-fit copy, optional sample chapter PDF and its original filename
-  - one-based onboarding position (for ordering books on the site)
-- Custom post type registration code is modular and separate from WordPress core and third-party plugin code
-- Depends on F025
-- Tests or validation cover: custom post type registration, all fields present and correctly typed
-
----
-
 ### F026 — Generate structured WordPress pages and book content
 
 **Type:** Feature
@@ -400,6 +382,24 @@ maintain.
 ---
 
 ## Done
+
+### F033 — Register the Books custom post type
+
+**Type:** Feature
+**As** a developer, the generated WordPress site has a Books custom post type that mirrors every book field collected in onboarding, so book content is structured and queryable rather than embedded in static page copy.
+
+- Register a Books custom post type with fields covering every book detail captured in onboarding:
+  - title, cover image, description, at least one buy link, category, genre, subgenre
+  - standalone/series flag; when part of a series: series name, book number, total books, series-complete flag
+  - repeatable editorial reviews (publication name) and reader reviews (reviewer name, optional credentials, optional photo, optional star rating, optional original-review link)
+  - starred-review flag, award icons
+  - optional reader-fit copy, optional sample chapter PDF and its original filename
+  - one-based onboarding position (for ordering books on the site)
+- Custom post type registration code is modular and separate from WordPress core and third-party plugin code
+- Depends on F025
+- Tests or validation cover: custom post type registration, all fields present and correctly typed
+
+---
 
 ### F025 — Set up the base WordPress site scaffold
 
