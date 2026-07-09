@@ -1,5 +1,5 @@
 import subprocess
-from typing import Sequence
+from collections.abc import Sequence
 
 
 def default_runner(args: Sequence[str]) -> None:

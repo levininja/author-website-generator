@@ -14,7 +14,6 @@ from PIL import Image
 from onboarding.models import Author
 from onboarding.services import sync_genre_catalog
 
-
 pytestmark = pytest.mark.django_db
 
 

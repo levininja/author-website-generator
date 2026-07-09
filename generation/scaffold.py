@@ -1,6 +1,6 @@
 import os
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Callable, Optional, Sequence
 
 from generation.subprocess_runner import default_runner
 
@@ -22,7 +22,7 @@ def install_wordpress(
     admin_password: str = "admin",
     admin_email: str = "admin@example.com",
     site_url: str = "http://localhost:8080",
-    runner: Optional[Callable[[Sequence[str]], None]] = None,
+    runner: Callable[[Sequence[str]], None] | None = None,
 ) -> None:
     """Download WP core and run the installer into site_path."""
     run = runner or default_runner
@@ -45,7 +45,7 @@ def configure_wordpress(
     site_path: str,
     site_title: str,
     site_tagline: str,
-    runner: Optional[Callable[[Sequence[str]], None]] = None,
+    runner: Callable[[Sequence[str]], None] | None = None,
 ) -> None:
     """Apply baseline WordPress configuration: site name, tagline, and pretty permalinks."""
     run = runner or default_runner

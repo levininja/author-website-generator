@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from models.onboarding import OnboardingForm, SocialLinks, validate_genre_tree
 
-
 GENRE_TREE = {
     "Fiction": {
         "Science Fiction": ["Cyberpunk", "Space Opera"],

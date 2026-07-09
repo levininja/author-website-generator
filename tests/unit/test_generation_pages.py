@@ -1,9 +1,7 @@
 """Tests for generation/pages.py — all WP-CLI calls are mocked; no real WP install required."""
 
 import json
-import pytest
 from unittest.mock import MagicMock
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers

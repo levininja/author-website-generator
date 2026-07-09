@@ -18,7 +18,6 @@ from onboarding.models import (
 )
 from onboarding.services import sync_genre_catalog
 
-
 pytestmark = pytest.mark.django_db
 
 

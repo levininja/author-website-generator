@@ -79,6 +79,27 @@ pytest
 npm run test:frontend
 ```
 
+## Linting and formatting
+
+This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and formatting. It is included in `requirements-dev.txt`.
+
+Check for violations:
+```bash
+ruff check .
+```
+
+Auto-fix violations that Ruff can resolve automatically:
+```bash
+ruff check --fix .
+```
+
+Format all Python files:
+```bash
+ruff format .
+```
+
+See [CODING_STANDARDS.md](CODING_STANDARDS.md) for the full coding conventions. The remaining unfixed violations are type hints and docstrings — these are added as files are touched rather than in a single pass. New code must be fully annotated and documented.
+
 ## Project structure
 ```
 manage.py               Django management entry point

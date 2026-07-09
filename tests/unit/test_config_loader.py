@@ -1,10 +1,10 @@
 """Tests for config/loader.py — all tests run against in-memory YAML strings, no disk I/O."""
 
 import textwrap
+
 import pytest
 
-from config.loader import load_config, ConfigError
-
+from config.loader import ConfigError, load_config
 
 VALID_YAML = textwrap.dedent("""\
     website_servers:

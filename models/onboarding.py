@@ -15,7 +15,6 @@ from pydantic import (
     model_validator,
 )
 
-
 GenreTree = dict[str, dict[str, list[str]]]
 
 DIVI_TEMPLATES = [
@@ -168,8 +167,8 @@ class BookEntry(OnboardingBaseModel):
         if tree is not None:
             try:
                 subgenres = tree[self.category][self.genre]
-            except (KeyError, TypeError):
-                raise ValueError("Book category and genre must exist in the catalog.")
+            except (KeyError, TypeError) as exc:
+                raise ValueError("Book category and genre must exist in the catalog.") from exc
             if self.subgenre is not None and self.subgenre not in subgenres:
                 raise ValueError("Book subgenre must belong to the selected genre.")
 

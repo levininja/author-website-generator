@@ -1,8 +1,9 @@
+import os
+
 import yaml
 from pydantic import ValidationError
 
 from models.config_models import AppConfig
-import os
 
 
 class ConfigError(Exception):

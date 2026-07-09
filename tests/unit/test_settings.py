@@ -5,8 +5,8 @@ import os
 import subprocess
 import sys
 
-from django.conf import settings
 from django.apps import apps
+from django.conf import settings
 
 
 def test_staticfiles_app_is_installed_for_development_asset_serving():

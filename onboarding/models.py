@@ -2,6 +2,7 @@
 
 import uuid
 from pathlib import Path
+from typing import ClassVar
 
 from django.db import models
 
@@ -47,7 +48,7 @@ class BookCategory(models.Model):
 
     class Meta:
         db_table = "genre_category"
-        ordering = ["name"]
+        ordering: ClassVar = ["name"]
 
 
 class BookGenre(models.Model):
@@ -60,8 +61,8 @@ class BookGenre(models.Model):
 
     class Meta:
         db_table = "genre"
-        ordering = ["category__name", "name"]
-        constraints = [
+        ordering: ClassVar = ["category__name", "name"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["category", "name"],
                 name="unique_genre_per_category",
@@ -79,8 +80,8 @@ class BookSubgenre(models.Model):
 
     class Meta:
         db_table = "genre_subgenre"
-        ordering = ["genre__name", "name"]
-        constraints = [
+        ordering: ClassVar = ["genre__name", "name"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["genre", "name"],
                 name="unique_subgenre_per_genre",
@@ -139,8 +140,8 @@ class AuthorCategory(models.Model):
 
     class Meta:
         db_table = "author_category"
-        ordering = ["display_position"]
-        constraints = [
+        ordering: ClassVar = ["display_position"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["author", "category"],
                 name="unique_author_category",
@@ -159,8 +160,8 @@ class AuthorGenre(models.Model):
 
     class Meta:
         db_table = "author_genre"
-        ordering = ["display_position"]
-        constraints = [
+        ordering: ClassVar = ["display_position"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["author", "genre"],
                 name="unique_author_genre",
@@ -179,8 +180,8 @@ class AuthorSubgenre(models.Model):
 
     class Meta:
         db_table = "author_subgenre"
-        ordering = ["display_position"]
-        constraints = [
+        ordering: ClassVar = ["display_position"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["author", "subgenre"],
                 name="unique_author_subgenre",
@@ -205,8 +206,8 @@ class Series(models.Model):
 
     class Meta:
         db_table = "book_series"
-        ordering = ["name"]
-        constraints = [
+        ordering: ClassVar = ["name"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["author", "name"],
                 name="unique_series_name_per_author",
@@ -257,8 +258,8 @@ class Book(models.Model):
 
     class Meta:
         db_table = "book"
-        ordering = ["onboarding_position"]
-        constraints = [
+        ordering: ClassVar = ["onboarding_position"]
+        constraints: ClassVar = [
             models.UniqueConstraint(
                 fields=["author", "onboarding_position"],
                 name="unique_book_onboarding_position_per_author",
@@ -298,7 +299,7 @@ class BookReview(models.Model):
 
     class Meta:
         db_table = "book_review"
-        ordering = ["display_position"]
+        ordering: ClassVar = ["display_position"]
 
 
 class BookAward(models.Model):
@@ -314,4 +315,4 @@ class BookAward(models.Model):
 
     class Meta:
         db_table = "book_award"
-        ordering = ["display_position"]
+        ordering: ClassVar = ["display_position"]

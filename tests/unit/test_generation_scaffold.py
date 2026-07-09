@@ -1,10 +1,7 @@
 """Tests for generation/scaffold.py — all WP-CLI calls are mocked; no real WP install required."""
 
 import os
-import pytest
-from pathlib import Path
-from unittest.mock import MagicMock, call, patch
-
+from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -25,7 +22,7 @@ def _called_args(runner) -> list[list[str]]:
 # ---------------------------------------------------------------------------
 
 def test_get_site_path_default_is_generated_site_in_repo_root():
-    from generation.scaffold import get_site_path, DEFAULT_SITE_PATH
+    from generation.scaffold import DEFAULT_SITE_PATH, get_site_path
     with patch.dict(os.environ, {}, clear=False):
         os.environ.pop("WP_GENERATED_SITE_PATH", None)
         result = get_site_path()
@@ -123,7 +120,7 @@ def test_install_wordpress_passes_path_to_core_install():
 
 
 def test_install_wordpress_uses_wpcli_binary():
-    from generation.scaffold import install_wordpress, WP_CLI
+    from generation.scaffold import WP_CLI, install_wordpress
     runner = _make_runner()
     install_wordpress(site_path="/tmp/wp", site_title="Test", runner=runner)
     for cmd in _called_args(runner):
@@ -137,7 +134,9 @@ def test_install_wordpress_uses_wpcli_binary():
 def test_configure_wordpress_sets_blogname():
     from generation.scaffold import configure_wordpress
     runner = _make_runner()
-    configure_wordpress(site_path="/tmp/wp", site_title="Jane Doe", site_tagline="Writing stories", runner=runner)
+    configure_wordpress(
+        site_path="/tmp/wp", site_title="Jane Doe", site_tagline="Writing stories", runner=runner
+    )
     calls = _called_args(runner)
     blogname_call = next(c for c in calls if "blogname" in c)
     assert "Jane Doe" in blogname_call
@@ -146,7 +145,9 @@ def test_configure_wordpress_sets_blogname():
 def test_configure_wordpress_sets_blogdescription():
     from generation.scaffold import configure_wordpress
     runner = _make_runner()
-    configure_wordpress(site_path="/tmp/wp", site_title="Jane Doe", site_tagline="My tagline here", runner=runner)
+    configure_wordpress(
+        site_path="/tmp/wp", site_title="Jane Doe", site_tagline="My tagline here", runner=runner
+    )
     calls = _called_args(runner)
     desc_call = next(c for c in calls if "blogdescription" in c)
     assert "My tagline here" in desc_call
@@ -164,13 +165,15 @@ def test_configure_wordpress_sets_permalink_structure():
 def test_configure_wordpress_passes_path_to_all_calls():
     from generation.scaffold import configure_wordpress
     runner = _make_runner()
-    configure_wordpress(site_path="/tmp/special-path", site_title="T", site_tagline="T", runner=runner)
+    configure_wordpress(
+        site_path="/tmp/special-path", site_title="T", site_tagline="T", runner=runner
+    )
     for cmd in _called_args(runner):
         assert any("/tmp/special-path" in arg for arg in cmd)
 
 
 def test_configure_wordpress_uses_wpcli_binary():
-    from generation.scaffold import configure_wordpress, WP_CLI
+    from generation.scaffold import WP_CLI, configure_wordpress
     runner = _make_runner()
     configure_wordpress(site_path="/tmp/wp", site_title="T", site_tagline="T", runner=runner)
     for cmd in _called_args(runner):

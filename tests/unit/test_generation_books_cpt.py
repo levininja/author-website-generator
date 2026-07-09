@@ -1,7 +1,11 @@
-"""Tests for generation/books_cpt.py — no WordPress install required; tests inspect written file content."""
+"""Tests for generation/books_cpt.py.
+
+No WordPress install required; tests inspect written file content.
+"""
+
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 
 MU_PLUGIN_REL = "wp-content/mu-plugins/awg-books.php"
 

@@ -331,8 +331,8 @@ def download_sample_chapter(request, book_id):
 
     try:
         chapter = book.sample_chapter_path.open("rb")
-    except (FileNotFoundError, OSError):
-        raise Http404
+    except (FileNotFoundError, OSError) as exc:
+        raise Http404 from exc
 
     return FileResponse(
         chapter,

@@ -12,7 +12,6 @@ from django.test import Client
 from onboarding.models import Author, Book, Series
 from onboarding.services import sync_genre_catalog
 
-
 pytestmark = pytest.mark.django_db
 
 GENRE_TREE = {

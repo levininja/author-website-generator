@@ -31,7 +31,7 @@ ignore = [
     "D213",    # multi-line-summary-second-line — conflicts with D212 (first-line summary)
 ]
 
-[tool.ruff.lint.pydocstring-conventions]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.isort]
@@ -46,6 +46,8 @@ known-first-party = ["accounts", "onboarding", "generator", "generation", "confi
 "**/migrations/*.py" = ["D", "ANN", "E501", "RUF"]
 # Settings file: Django settings use patterns that look odd to a linter
 "generator/settings.py" = ["N802", "N806"]
+# Pydantic validator methods must accept Any — ANN401 is a false positive here
+"models/onboarding.py" = ["ANN401"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

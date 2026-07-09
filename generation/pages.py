@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Callable, Optional, Sequence
+from collections.abc import Callable, Sequence
 
 from generation.subprocess_runner import default_capture_runner, default_runner
 
@@ -93,7 +93,7 @@ def _set_book_meta(run, site_path: str, post_id: str, book: dict) -> None:
     series = book.get("series")
     subgenre = book.get("subgenre")
 
-    simple_fields: dict[str, Optional[str]] = {
+    simple_fields: dict[str, str | None] = {
         "_awg_cover_image": book.get("cover_image_url"),
         "_awg_genre": book.get("genre", {}).get("name"),
         "_awg_category": book.get("category", {}).get("name"),
@@ -185,8 +185,8 @@ def generate_pages(
     site_path: str,
     serialized_author: dict,
     serialized_books: list,
-    runner: Optional[Callable[[Sequence[str]], None]] = None,
-    capture_runner: Optional[Callable[[Sequence[str]], str]] = None,
+    runner: Callable[[Sequence[str]], None] | None = None,
+    capture_runner: Callable[[Sequence[str]], str] | None = None,
 ) -> None:
     """Create all author pages and book CPT records in the WordPress site at site_path."""
     run = runner or default_runner

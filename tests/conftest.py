@@ -1,6 +1,6 @@
 import textwrap
-import pytest
 
+import pytest
 
 MINIMAL_CONFIG_YAML = textwrap.dedent("""\
     website_servers:

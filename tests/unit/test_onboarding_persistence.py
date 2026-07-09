@@ -19,7 +19,6 @@ from onboarding.models import (
 )
 from onboarding.services import persist_onboarding, sync_genre_catalog
 
-
 GENRE_TREE = {
     "Fiction": {
         "Science Fiction": ["Cyberpunk", "Space Opera"],

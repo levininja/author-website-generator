@@ -1,7 +1,9 @@
 """Tests for the custom User model."""
 
 import uuid
+
 import pytest
+
 from accounts.models import User
 
 

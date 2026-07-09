@@ -4,7 +4,6 @@ from pathlib import Path
 
 from django.db import transaction
 
-from models.onboarding import OnboardingForm
 from onboarding.models import (
     Author,
     AuthorCategory,
