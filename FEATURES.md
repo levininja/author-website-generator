@@ -45,18 +45,6 @@ shopping carts, or payment processing.
 ---
 
 
-### F027 — Give each book its own detail page
-
-**Type:** Feature
-**As** an end user, each of my books gets its own page with a real URL instead of sharing one generic Book Detail Page.
-
-- Depends on F026
-- Generate one page per book, using a URL slug derived from the book title
-- Update the Books listing page to link to each book's own page instead of the shared generic page
-- Tests cover slug generation (including duplicate-title collisions), per-book page content, and the Books-listing links
-
----
-
 ### F028 — Install and configure Divi with baseline settings
 
 **Type:** Feature
@@ -362,6 +350,15 @@ maintain.
 ---
 
 ## Done
+
+### F027 — Give each book its own detail page
+
+**Type:** Feature
+**As** an end user, each of my books gets its own page with a real URL instead of sharing one generic Book Detail Page.
+
+**Implementation note:** `slugify_title()` (pure function) derives URL slugs; `_assign_slugs()` handles collisions by appending `-2`, `-3`, etc. Per-book pages created with `--post_name=<slug>`; Books listing page now renders a `<ul>` of links. The single generic Book Detail page from F026 is removed. 284/284 full suite green.
+
+---
 
 ### F026 — Generate structured WordPress pages and book content
 
