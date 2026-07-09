@@ -2,12 +2,18 @@
 
 ## Linting and formatting
 
-Ruff is installed inside `.venv` and is **not** on the system PATH. Always use the venv-prefixed commands:
+Ruff is installed inside `.venv`. Activate the virtualenv before running any commands:
 
 ```bash
-.venv/bin/ruff check .           # check for violations
-.venv/bin/ruff check --fix .     # auto-fix what Ruff can
-.venv/bin/ruff format .          # format all Python files
+source .venv/bin/activate
+```
+
+Then use bare commands:
+
+```bash
+ruff check .           # check for violations
+ruff check --fix .     # auto-fix what Ruff can
+ruff format .          # format all Python files
 ```
 
 Run `ruff check .` after every edit to Python files. All violations must be resolved before committing. See `CODING_STANDARDS.md` for the full conventions.

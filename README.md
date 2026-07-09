@@ -6,7 +6,15 @@ Related documents: [Product spec](SPEC.md) · [Feature list](FEATURES.md) · [Pr
 
 ## Setup
 
-**1. Install dependencies**
+**1. Create and activate the virtual environment**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Once activated, all Python commands (`ruff`, `pytest`, `python manage.py`, etc.) use the project's isolated environment. Activate once per terminal session.
+
+**2. Install dependencies**
 ```bash
 pip install -r requirements-dev.txt
 npm install
@@ -14,7 +22,7 @@ npm install
 
 `requirements-dev.txt` includes everything in `requirements.txt` plus dev tools (pytest, Ruff). Use `requirements.txt` alone for production deployments.
 
-**2. Configure environment**
+**3. Configure environment**
 ```bash
 cp .env.example .env
 ```
@@ -28,12 +36,12 @@ Cloudflare R2 when `R2_BUCKET_NAME` and the other `R2_*` variables documented
 in `.env.example` are configured; `R2_CUSTOM_DOMAIN` is the normal Cloudflare
 CDN hostname used to retrieve stored media.
 
-**3. Run migrations**
+**4. Run migrations**
 ```bash
 python manage.py migrate
 ```
 
-**4. Run**
+**5. Run**
 ```bash
 npm run build:frontend
 python manage.py runserver
@@ -85,20 +93,20 @@ This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and fo
 
 Check for violations:
 ```bash
-.venv/bin/ruff check .
+ruff check .
 ```
 
 Auto-fix violations that Ruff can resolve automatically:
 ```bash
-.venv/bin/ruff check --fix .
+ruff check --fix .
 ```
 
 Format all Python files:
 ```bash
-.venv/bin/ruff format .
+ruff format .
 ```
 
-> Ruff is installed inside `.venv` and is not on the system PATH. Always use `.venv/bin/ruff` or activate the virtualenv first (`source .venv/bin/activate`).
+These commands assume the virtualenv is active (step 1 of setup). See `CODING_STANDARDS.md` for the full conventions.
 
 See [CODING_STANDARDS.md](CODING_STANDARDS.md) for the full coding conventions. The remaining unfixed violations are type hints and docstrings — these are added as files are touched rather than in a single pass. New code must be fully annotated and documented.
 
