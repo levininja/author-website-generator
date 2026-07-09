@@ -45,26 +45,6 @@ shopping carts, or payment processing.
 ---
 
 
-### F026 — Generate structured WordPress pages and book content
-
-**Type:** Feature
-**As** an end user, my generated website includes the key author pages and structured book content so I start with a usable site instead of a blank theme.
-
-- Generate key pages: Home, About, Books, Contact, and a single generic Book Detail Page, using the v1 "Classic" template layout
-- In this version, those pages will be stubs mostly, not final products
-- Every field that was submitted in onboarding should be displayed on a page:
-  - Author information should be put on the About page (bios, picture, etc.)
-  - The selected color swatches should be displayed on the Home page as swatches of color
-  - The book information should be displayed on the Book Detail Page (book title, genre, book cover, series information, etc.) — this is one generic page shared by all books in v1; the URL is not customized per book (per-book pages are a follow-up, see F027)
-  - Any other fields from onboarding that don't make sense to put on the author or book pages should be put on the Home page (genre, newsletter link, social links, etc.)
-- Store books as Books custom post type records (F033) rather than only static page sections
-- Divi does NOT need to be installed yet at this stage (see F028)
-- Header/nav and footer generation is out of scope here (see F029)
-- The selected template has no effect on layout at this stage, except to display "Classic" by name on the Home page
-- Tests cover page generation, missing optional content, and storage/retrieval of all onboarding fields
-
----
-
 ### F027 — Give each book its own detail page
 
 **Type:** Feature
@@ -382,6 +362,15 @@ maintain.
 ---
 
 ## Done
+
+### F026 — Generate structured WordPress pages and book content
+
+**Type:** Feature
+**As** an end user, my generated website includes the key author pages and structured book content so I start with a usable site instead of a blank theme.
+
+**Implementation note:** `generation/pages.py` generates all 5 pages (Home, About, Books, Contact, Book Detail) via WP-CLI and creates `awg_book` CPT records for each book from serialized onboarding data. Home page is set as the WordPress static front page. `generation/subprocess_runner.py` gained `default_capture_runner` (returns stdout) to capture new post IDs from `--porcelain` output. 59 unit tests; 259/259 full suite green.
+
+---
 
 ### F033 — Register the Books custom post type
 
