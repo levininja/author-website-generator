@@ -4,8 +4,8 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Product de
 
 ## ID Tracker
 
-- Latest feature ID: `F036`
-- Latest task ID: `T003`
+- Latest feature ID: `F038`
+- Latest task ID: `T005`
 - Latest research ID: `R001`
 
 Four lists: **Doing** (active work), **Milestone 1** (ordered by priority), **Backlog** (unordered), and **Done**.
@@ -26,12 +26,13 @@ ID prefixes: `F` = feature, `T` = task, `R` = research task.
 ## Milestone 1 Epic — Generate and Preview a Standard Author Website
 
 Milestone 1 is v1 of the product for standard, non-ecommerce author websites: a
-user completes the onboarding form, hands off to a separate website-generation
-app, and AWG generates a complete WordPress site. Locally, only one generated
-site is ever live at a time: each new generation deletes the previous one and
-hosts the new one on a local PHP server, on its own port — separate from the
-onboarding app's port and the generation app's port (each of the latter two is
-its own Django + React app).
+user completes the onboarding form, clicks Generate, AWG enqueues a generation
+job and shows a progress screen, and upon completion the user can view the
+generated WordPress site running locally. Locally, only one generated site is
+ever live at a time: each new generation deletes the previous one and hosts the
+new one on a local PHP server on its own port, separate from the Django app's
+port. Generation runs in a background worker (not in the HTTP request thread)
+so the Django app stays responsive during the WP-CLI subprocess calls.
 
 Milestone 1 stops at generation, local preview, and a first manual production
 deployment for informal user testing. It does not include payments, billing,
@@ -44,6 +45,35 @@ shopping carts, or payment processing.
 3. One generated site has been manually deployed to a live URL following a documented runbook
 ---
 
+
+### T003 — Break the onboarding React app into separate files
+
+**Type:** Task
+**As** a developer, I want `frontend/onboarding/App.jsx` divided into smaller,
+focused files so that the onboarding frontend is easier to understand and
+maintain.
+
+The single 1,800+ line `App.jsx` file makes it hard to reason about individual
+steps and means agents editing the frontend will frequently step on each other.
+Decompose into per-step and per-concern component files before the next round
+of frontend feature work (F028+).
+
+---
+
+### T004 — Harden the subprocess runner with stderr capture, timeouts, and logging
+
+**Type:** Task
+**As** a developer, when a WP-CLI command fails during generation I get a clear, actionable error instead of a silent exception, so I can debug failures without guesswork.
+
+The current `default_runner` and `default_capture_runner` in `generation/subprocess_runner.py` call `subprocess.run(..., check=True, capture_output=True)`. When a command fails, `CalledProcessError` is raised but its `stdout` and `stderr` are never surfaced — they're silently swallowed by callers. There are also no timeouts, so a hung WP-CLI call (e.g. `wp core download` on a slow connection) will block the worker indefinitely.
+
+- Capture and attach `stderr` (and `stdout`) to any raised exception or log entry so generation failures produce readable error messages
+- Add a configurable `timeout` parameter (default 120 seconds for most commands; `wp core download` may warrant longer) — raise a clear `GenerationTimeoutError` on expiry
+- Log every subprocess invocation at DEBUG level (command + args) and every failure at ERROR level (command, exit code, stdout, stderr)
+- No retry logic required at this layer — callers can retry if needed
+- Tests cover: successful run, non-zero exit code with stderr captured, timeout expiry
+
+---
 
 ### F028 — Install and configure Divi with baseline settings
 
@@ -72,19 +102,23 @@ shopping carts, or payment processing.
 
 ---
 
-### F030 — Build the Generation app and wire generation end-to-end
+### F030 — Wire generation end-to-end with a background job queue
 
 **Type:** Feature
-**As** a developer, I can run website generation as its own Django + React app on its own port so onboarding, generation, and the generated WordPress preview don't collide, and as an end user I can trigger generation and see the result.
+**As** a developer, I can trigger website generation from the onboarding review screen and have it run in a background worker so the Django app stays responsive during the multi-minute WP-CLI subprocess calls, and as an end user I can see generation progress and be shown the result when it completes.
 
-- The existing onboarding app keeps the multi-step form through the final review/confirmation page
-- Clicking "Generate" navigates from the onboarding app to a new Generation app (its own Django + React app, its own port)
-- The Generation app owns `POST /generate`, the result/error screen (F007), and the link to the generated site preview (F020)
-- Generation validates the submitted onboarding data before beginning any site construction
+**Architecture decision required before implementation begins:** choose and configure the background job queue library. Leading candidates are Django-Q2, Celery + Redis, and Huey. See architecture notes in DECISIONS.md once the decision is recorded.
+
+- Generation stays inside the existing Django app (no separate app or port); the onboarding app's review/confirmation page triggers generation
+- `POST /generate` validates the author ID, enqueues a generation job, and immediately returns a job ID — it does not block until generation finishes
+- A `GenerationJob` model (or equivalent queue-native record) tracks job state: `pending`, `running`, `complete`, `failed`
+- The background worker runs the full generation pipeline (F025–F029 steps) for the submitted author data
+- `GET /generate/<job_id>/status` returns current job state and, on completion, the preview URL; on failure, a human-readable error message
+- The result/error screen (F007) polls this status endpoint and updates the UI without a page reload
 - Generation supports standard, non-ecommerce author websites only
 - The generated result is self-contained: it does not depend on a production WordPress, Cloudways, Cloudflare, DNS, SSL, or hosting operation
-- Generation failures return a safe, human-readable error and do not create a partial site record
-- Tests cover: the handoff from onboarding to the Generation app, the Generation app's own request/result handling, complete generation with all onboarding fields, optional-field handling, invalid input rejection, and generation failure (no partial record created)
+- Generation failures return a safe, human-readable error; no partial site files or records persist after a failed job
+- Tests cover: job enqueue on `POST /generate`, status endpoint for each job state, complete generation with all onboarding fields, optional-field handling, invalid author ID rejection, and generation failure cleanup (no partial site record created)
 
 ---
 
@@ -94,10 +128,10 @@ shopping carts, or payment processing.
 **As** an end user, I can view the website generated from my submission running as a real local WordPress site.
 
 - Only one generated site is hosted at a time; generating a new site deletes the previous one first, then writes and hosts the new one in its place
-- The generated site lives in its own dedicated folder and is served by a local PHP server on its own port, separate from the onboarding app's and Generation app's ports
-- A successful generation from the Generation app (F030) surfaces a link to the locally hosted site
+- The generated site lives in its own dedicated folder and is served by a local PHP server on its own port, separate from the Django app's port
+- A successful generation job (F030) surfaces a link to the locally hosted site
 - Generation is atomic: the previous site is only removed once the new site's files are fully written, and the new site is only hosted once fully written
-- Update the README quickstart at the same time this ships: describe the new three-app local architecture and why in one sentence, and add quickstart steps for spinning up the PHP server
+- Update the README quickstart at the same time this ships: add quickstart steps for spinning up the PHP server alongside the Django dev server and background worker
 - Tests cover file replacement (old site removed, new site written), atomic write/replace behavior, and successful local serving
 
 ---
@@ -107,8 +141,9 @@ shopping carts, or payment processing.
 **Type:** Feature
 **As** an end user, when generation completes I can open the generated website, and if it fails I see a human-readable error message.
 
-- Lives in the Generation app (F030), not the onboarding app
-- On success: redirect to or display a link to the locally hosted generated site (F020)
+- Lives in the generation result screen within the existing AWG app (not a separate app)
+- The UI polls `GET /generate/<job_id>/status` (F030) and updates without a page reload
+- On success: display a link to the locally hosted generated site (F020)
 - On failure: show a specific, actionable error plus a dismiss button
 - No internal exception details or stack traces are exposed to the user
 - Error display persists until the user dismisses it via X or resubmits
@@ -149,6 +184,39 @@ shopping carts, or payment processing.
 
 The backlog contains work that is useful after Milestone 1 but is not required
 to generate and preview a standard, non-ecommerce website inside AWG.
+
+### T005 — Migrate from SQLite to PostgreSQL
+
+**Type:** Task
+**As** a developer, AWG uses PostgreSQL in production so the database can handle concurrent writes from multiple HTTP workers and a background job worker without locking.
+
+SQLite's single-writer model means simultaneous requests (Django HTTP server + background worker + any future concurrency) can produce write contention. PostgreSQL is the standard Django production database and removes this ceiling before real users arrive.
+
+- Replace the `sqlite3` database engine with `psycopg2` / PostgreSQL in production settings
+- Keep SQLite as the local development default (acceptable for single-developer, single-worker local use)
+- Add `DATABASE_URL` env var support (e.g. via `dj-database-url`) so production config is a single env var
+- Document the production database setup in README and `.env.example`
+- Run and verify all existing migrations against PostgreSQL before merging
+- This should be completed before or alongside F035 (first production deployment)
+
+---
+
+### F037 — Give genre catalog entries stable integer IDs for internal references
+
+**Type:** Feature
+**As** a developer, genre categories, genres, and subgenres are identified by stable integer IDs (not by name) in all internal references — validation, persistence, and API responses — so renaming a genre does not silently break author records or require a data migration of every related table.
+
+**Background:** `_persist_author_selections` in `services.py` currently resolves genre selections by matching the submitted string name against `BookCategory`, `BookGenre`, and `BookSubgenre` rows. If two levels share a name (plausible in a large catalog), the match resolves to the wrong level. More broadly, the frontend should submit genre IDs, not genre names, so the backend is not doing string-lookup resolution at write time.
+
+- `GET /genres` response adds `id` (integer PK) to each category, genre, and subgenre entry alongside `name`
+- The onboarding frontend submits selected genre IDs (not names) in `OnboardingForm.genres`
+- `OnboardingForm.genres` type changes from `list[str]` to `list[int]` (genre-level IDs); validation resolves IDs against the loaded catalog and rejects unknown IDs
+- `_persist_author_selections` looks up genre records by ID instead of by name; removes the sequential N×3 query loop in favor of a bulk lookup
+- `serialize_author` continues to return genre names (human-readable output is unchanged); it resolves names from the already-loaded related objects
+- All existing tests updated; new tests cover: ID submission round-trip, unknown ID rejection, duplicate ID deduplication, and the absence of name-collision ambiguity
+- **Note:** this is a breaking change to the `POST /onboarding` payload shape; the frontend must be updated in the same PR
+
+---
 
 ### F036 — Automate the production deployment runbook
 
@@ -338,14 +406,6 @@ administrative pages must be separately authenticated and authorized.
 - **Human prerequisite:** dedicated throwaway Cloudways app + Cloudflare zone reserved exclusively for testing — must not be a real client zone
 
 ---
-
-### T003 — Break the onboarding React app into separate files
-
-**Type:** Task
-**As** a developer, I want `frontend/onboarding/App.jsx` divided into smaller,
-focused files so that the onboarding frontend is easier to understand and
-maintain.
-
 
 ---
 

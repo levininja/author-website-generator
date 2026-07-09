@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET, require_POST
 from PIL import Image, UnidentifiedImageError
 from pydantic import ValidationError
 
-from models.onboarding import OnboardingForm, validate_genre_tree
+from models.onboarding import DIVI_TEMPLATES, OnboardingForm, validate_genre_tree
 from onboarding.models import Author, Book
 from onboarding.services import (
     genre_tree_from_database,
@@ -17,10 +17,6 @@ from onboarding.services import (
     serialize_author,
     serialize_book,
 )
-
-DIVI_TEMPLATES = [
-    "Classic",
-]
 
 IMAGE_LIMIT = 10 * 1024 * 1024
 PDF_LIMIT = 20 * 1024 * 1024

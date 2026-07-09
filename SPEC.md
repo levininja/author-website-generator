@@ -44,8 +44,11 @@ The product is an engineering-grade, managed website service built exclusively f
 
 ## Technical Architecture
 ### Core Platform & Tech Stack of This Project
-Python / Django 5.2 LTS backend with React frontend flows. See
-[Product decisions](DECISIONS.md#awg-uses-django-and-react).
+Python / Django 5.2 LTS backend with React frontend flows. Website generation
+runs as a background job in the same Django app — not a separate app or port.
+A background job queue library (chosen in DECISIONS.md) manages job state and
+executes the WP-CLI subprocess pipeline in a worker process so the Django HTTP
+server stays responsive. See [Product decisions](DECISIONS.md#awg-uses-django-and-react).
 
 ### Core Platform & Tech Stack of Websites we will Generate
 
