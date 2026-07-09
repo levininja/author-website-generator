@@ -6,51 +6,6 @@ Related documents: [README](README.md) · [Product spec](SPEC.md) · [Feature li
 
 This file records the product's strategic decisions and their primary rationale.
 
----
-
-## Coding Standards
-
-### Python auto-formatter and linter: Ruff
-
-AWG uses [Ruff](https://docs.astral.sh/ruff/) as the single tool for Python code formatting and linting. Ruff replaces Black (formatter), flake8 (linter), and isort (import sorter) with one fast, zero-ambiguity tool. Its formatter output is Black-compatible, making it immediately recognizable to any Python developer. Configuration lives in `pyproject.toml`.
-
-### Type hints: required everywhere (strict)
-
-All Python functions and methods require type annotations on every parameter and return value, including `-> None` for functions that return nothing. This applies to views, services, models, helpers, and utilities without exception. Strict typing surfaces bugs at definition time rather than runtime and makes the codebase easier to navigate for new contributors. Ruff enforces this via the `ANN` rule set.
-
-### Import organization: isort-style, three groups
-
-Imports are sorted into three groups separated by blank lines: standard library first, third-party second, local/project third. Ruff enforces this automatically with no manual effort required.
-
-### Line length: 100 characters
-
-Maximum line length is 100 characters. Django's verbose patterns (model field definitions, URL configurations, serializer declarations) benefit from the extra breathing room over the Black default of 88.
-
-### Docstrings: Google style, scaled to complexity
-
-Simple or self-evident functions get a single-line docstring. Functions with non-obvious behavior, multiple parameters, notable return values, or error conditions get a full Google-style docstring with `Args`, `Returns`, and `Raises` sections as applicable. The bar for "self-evident" is a mid-level Python developer reading the signature and immediately understanding intent, inputs, and output without needing prose to explain it.
-
-### Naming conventions
-
-Standard PEP 8 applies throughout: `snake_case` for variables, functions, and model fields; `PascalCase` for classes; `UPPER_SNAKE_CASE` for constants; `_leading_underscore` for private helpers. View and service functions use verb-first naming (`create_author`, `get_book`, `validate_email`) — action-oriented, reads as an instruction, consistent with Django's own conventions.
-
-### Exception handling: custom exception classes
-
-Project-specific exceptions live in a shared `exceptions.py` module. Services raise typed exceptions (`AuthorNotFound`, `DuplicateEmailError`, etc.); views catch them and translate to HTTP responses. This keeps the service layer HTTP-ignorant and makes error handling self-documenting. Django's built-in exceptions (`Http404`, `PermissionDenied`) are still used where they are the natural fit (URL resolution, auth).
-
-### Test structure and naming
-
-Test files mirror source files: `onboarding/services.py` → `tests/unit/onboarding/test_services.py`. This makes tests trivially locatable and keeps the `tests/` tree navigable as the codebase grows. Test functions use verbose `test_<thing>_<condition>_<expected>` naming (e.g. `test_create_author_duplicate_email_raises_error`) so failures in CI read as plain-English descriptions of what broke.
-
-### Django architecture: thin models, fat services
-
-Models contain only fields, `Meta`, `__str__`, and simple computed properties. All business logic — validation, persistence orchestration, cleanup, cross-model operations — lives in `services.py`. Views are thin: they parse the request, call a service, and return a response. This keeps each layer independently testable and prevents models and views from accumulating logic over time.
-
-### String quotes: double quotes
-
-All Python strings use double quotes. This is the Ruff/Black default, requires no configuration override, and matches the convention of most modern Python projects and adjacent languages (JSON, HTML).
-
----
 
 ## replace_author_id is unauthenticated by design for v1
 
