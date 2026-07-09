@@ -85,18 +85,20 @@ This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and fo
 
 Check for violations:
 ```bash
-ruff check .
+.venv/bin/ruff check .
 ```
 
 Auto-fix violations that Ruff can resolve automatically:
 ```bash
-ruff check --fix .
+.venv/bin/ruff check --fix .
 ```
 
 Format all Python files:
 ```bash
-ruff format .
+.venv/bin/ruff format .
 ```
+
+> Ruff is installed inside `.venv` and is not on the system PATH. Always use `.venv/bin/ruff` or activate the virtualenv first (`source .venv/bin/activate`).
 
 See [CODING_STANDARDS.md](CODING_STANDARDS.md) for the full coding conventions. The remaining unfixed violations are type hints and docstrings — these are added as files are touched rather than in a single pass. New code must be fully annotated and documented.
 

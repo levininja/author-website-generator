@@ -31,10 +31,12 @@ IMAGE_TYPES = {
 
 
 def index(request: HttpRequest) -> HttpResponse:
+    """Redirect the site root to the onboarding page."""
     return redirect("/onboard")
 
 
 def onboard(request: HttpRequest) -> HttpResponse:
+    """Render the public onboarding form."""
     return render(request, "onboarding/onboard.html", {"divi_templates": DIVI_TEMPLATES})
 
 
@@ -191,6 +193,7 @@ def _validate_uploaded_files(
 
 @require_POST
 def create_onboarding(request: HttpRequest) -> JsonResponse:
+    """Validate and persist a multipart onboarding submission."""
     if request.content_type != "multipart/form-data":
         return JsonResponse(
             {"message": "Request body must be multipart form data."},
@@ -268,6 +271,7 @@ def create_onboarding(request: HttpRequest) -> JsonResponse:
 
 @require_GET
 def genres(request: HttpRequest) -> JsonResponse:
+    """Return the configured onboarding genre catalog."""
     try:
         tree = _load_genre_tree()
     except ValueError:
@@ -280,6 +284,7 @@ def genres(request: HttpRequest) -> JsonResponse:
 
 @require_GET
 def author_detail(request: HttpRequest, author_id: UUID) -> JsonResponse:
+    """Return one persisted author's review data."""
     author = (
         Author.objects.prefetch_related(
             "authorcategory_set__category",
@@ -296,6 +301,7 @@ def author_detail(request: HttpRequest, author_id: UUID) -> JsonResponse:
 
 @require_GET
 def author_books(request: HttpRequest, author_id: UUID) -> JsonResponse:
+    """Return all persisted books for an author."""
     if not Author.objects.filter(pk=author_id).exists():
         return JsonResponse({"message": "Author not found."}, status=404)
     books = (
@@ -311,6 +317,7 @@ def author_books(request: HttpRequest, author_id: UUID) -> JsonResponse:
 
 @require_GET
 def book_detail(request: HttpRequest, book_id: UUID) -> JsonResponse:
+    """Return one persisted book's review data."""
     book = (
         Book.objects.select_related("genre__category", "subgenre", "series")
         .prefetch_related(
@@ -327,6 +334,7 @@ def book_detail(request: HttpRequest, book_id: UUID) -> JsonResponse:
 
 @require_GET
 def download_sample_chapter(request: HttpRequest, book_id: UUID) -> FileResponse:
+    """Stream a persisted sample chapter PDF for download."""
     book = (
         Book.objects.filter(pk=book_id)
         .only("sample_chapter_path", "sample_chapter_name")
@@ -350,6 +358,7 @@ def download_sample_chapter(request: HttpRequest, book_id: UUID) -> FileResponse
 
 @require_POST
 def generate(request: HttpRequest) -> JsonResponse:
+    """Validate a saved author before starting the generation flow."""
     try:
         payload = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):

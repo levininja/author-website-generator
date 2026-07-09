@@ -107,6 +107,7 @@ def sync_genre_catalog(tree: GenreTree) -> None:
 
 
 def genre_tree_from_database() -> GenreTree:
+    """Return the persisted genre catalog as the onboarding genre tree."""
     tree: GenreTree = {}
     categories = BookCategory.objects.prefetch_related("genres__subgenres")
     for category in categories:
@@ -352,6 +353,7 @@ def _author_genre_selections(author: Author) -> list[str]:
 
 
 def serialize_author(author: Author) -> dict[str, object]:
+    """Serialize an author for onboarding review and edit flows."""
     return {
         "id": str(author.pk),
         "name": author.name,
@@ -382,6 +384,7 @@ def serialize_author(author: Author) -> dict[str, object]:
 
 
 def serialize_book(book: Book) -> dict[str, object]:
+    """Serialize a book with related reviews, awards, and taxonomy."""
     return {
         "id": str(book.pk),
         "author_id": str(book.author_id),

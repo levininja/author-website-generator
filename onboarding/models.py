@@ -14,10 +14,12 @@ def _randomized_name(original_name: str) -> str:
 
 
 def author_headshot_path(instance: Author, filename: str) -> str:
+    """Return the storage path for an author's uploaded headshot."""
     return f"authors/{instance.pk}/headshot/{_randomized_name(filename)}"
 
 
 def book_cover_path(instance: Book, filename: str) -> str:
+    """Return the storage path for a book cover upload."""
     return (
         f"authors/{instance.author_id}/books/{instance.pk}/cover/"
         f"{_randomized_name(filename)}"
@@ -25,6 +27,7 @@ def book_cover_path(instance: Book, filename: str) -> str:
 
 
 def sample_chapter_path(instance: Book, filename: str) -> str:
+    """Return the storage path for a book sample chapter upload."""
     return (
         f"authors/{instance.author_id}/books/{instance.pk}/sample/"
         f"{_randomized_name(filename)}"
@@ -32,6 +35,7 @@ def sample_chapter_path(instance: Book, filename: str) -> str:
 
 
 def reviewer_photo_path(instance: BookReview, filename: str) -> str:
+    """Return the storage path for a reviewer photo upload."""
     return (
         f"authors/{instance.book.author_id}/books/{instance.book_id}/"
         f"reviews/{instance.pk}/{_randomized_name(filename)}"
@@ -39,6 +43,7 @@ def reviewer_photo_path(instance: BookReview, filename: str) -> str:
 
 
 def award_icon_path(instance: BookAward, filename: str) -> str:
+    """Return the storage path for an award icon upload."""
     return (
         f"authors/{instance.book.author_id}/books/{instance.book_id}/"
         f"awards/{instance.pk}/{_randomized_name(filename)}"
@@ -46,6 +51,8 @@ def award_icon_path(instance: BookAward, filename: str) -> str:
 
 
 class BookCategory(models.Model):
+    """Top-level book classification such as Fiction or Nonfiction."""
+
     name = models.CharField(max_length=255, unique=True)
 
     class Meta:
@@ -54,6 +61,8 @@ class BookCategory(models.Model):
 
 
 class BookGenre(models.Model):
+    """Genre option nested under a top-level book category."""
+
     category = models.ForeignKey(
         BookCategory,
         on_delete=models.PROTECT,
@@ -73,6 +82,8 @@ class BookGenre(models.Model):
 
 
 class BookSubgenre(models.Model):
+    """Subgenre option nested under a book genre."""
+
     genre = models.ForeignKey(
         BookGenre,
         on_delete=models.PROTECT,
@@ -92,6 +103,8 @@ class BookSubgenre(models.Model):
 
 
 class Author(models.Model):
+    """Persisted author profile submitted through onboarding."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     contact_email = models.EmailField()
@@ -136,6 +149,8 @@ class Author(models.Model):
 
 
 class AuthorCategory(models.Model):
+    """Ordered category selection for an author."""
+
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     category = models.ForeignKey(BookCategory, on_delete=models.PROTECT)
     display_position = models.PositiveIntegerField()
@@ -156,6 +171,8 @@ class AuthorCategory(models.Model):
 
 
 class AuthorGenre(models.Model):
+    """Ordered genre selection for an author."""
+
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     genre = models.ForeignKey(BookGenre, on_delete=models.PROTECT)
     display_position = models.PositiveIntegerField()
@@ -176,6 +193,8 @@ class AuthorGenre(models.Model):
 
 
 class AuthorSubgenre(models.Model):
+    """Ordered subgenre selection for an author."""
+
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     subgenre = models.ForeignKey(BookSubgenre, on_delete=models.PROTECT)
     display_position = models.PositiveIntegerField()
@@ -196,6 +215,8 @@ class AuthorSubgenre(models.Model):
 
 
 class Series(models.Model):
+    """Book series owned by one author."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(
         Author,
@@ -218,6 +239,8 @@ class Series(models.Model):
 
 
 class Book(models.Model):
+    """Persisted book submitted for an author."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(
         Author,
@@ -274,6 +297,8 @@ class Book(models.Model):
 
 
 class BookReview(models.Model):
+    """Persisted editorial or reader review for a book."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     book = models.ForeignKey(
         Book,
@@ -305,6 +330,8 @@ class BookReview(models.Model):
 
 
 class BookAward(models.Model):
+    """Persisted award badge for a book."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     book = models.ForeignKey(
         Book,

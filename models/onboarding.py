@@ -103,6 +103,7 @@ class BookReview(OnboardingBaseModel):
     @field_validator("original_review_url", mode="before")
     @classmethod
     def normalize_review_url(cls, value: Any) -> Any:
+        """Coerce empty strings to None and normalize URLs before validation."""
         if isinstance(value, str) and not value.strip():
             return None
         return normalize_web_url(value)
@@ -114,6 +115,7 @@ class BookReview(OnboardingBaseModel):
     )
     @classmethod
     def normalize_blank_optional_value(cls, value: Any) -> Any:
+        """Coerce blank strings to None for optional text fields."""
         return None if isinstance(value, str) and not value.strip() else value
 
 
@@ -149,6 +151,7 @@ class BookEntry(OnboardingBaseModel):
     @field_validator("buy_links", mode="before")
     @classmethod
     def normalize_buy_links(cls, value: Any) -> Any:
+        """Normalize each buy link URL before validation."""
         if not isinstance(value, list):
             return value
         return [normalize_web_url(link) for link in value]
@@ -163,10 +166,12 @@ class BookEntry(OnboardingBaseModel):
     )
     @classmethod
     def normalize_blank_optional_text(cls, value: Any) -> Any:
+        """Coerce blank strings to None for optional text fields."""
         return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
     def validate_genre_and_series(self, info: ValidationInfo) -> Self:
+        """Validate editorial review credentials, genre membership, and series fields."""
         if any(review.credentials for review in self.editorial_reviews):
             raise ValueError(
                 "Editorial reviews identify a publication and cannot include "
@@ -209,6 +214,7 @@ class SocialLinks(OnboardingBaseModel):
     @field_validator("*", mode="before")
     @classmethod
     def normalize_blank_url(cls, value: Any) -> Any:
+        """Coerce blank strings to None and normalize all social URLs before validation."""
         if isinstance(value, str) and not value.strip():
             return None
         return normalize_web_url(value)
@@ -235,6 +241,7 @@ class OnboardingForm(OnboardingBaseModel):
     @field_validator("site_domain")
     @classmethod
     def validate_site_domain(cls, value: str) -> str:
+        """Normalize to lowercase and reject domains with protocols or paths."""
         normalized = value.lower()
         if not DOMAIN_PATTERN.fullmatch(normalized):
             raise ValueError("Enter a bare domain name without a protocol or path.")
@@ -251,11 +258,13 @@ class OnboardingForm(OnboardingBaseModel):
     )
     @classmethod
     def normalize_blank_optional_text(cls, value: Any) -> Any:
+        """Coerce blank strings to None for optional text fields."""
         return None if isinstance(value, str) and not value.strip() else value
 
     @field_validator("selected_template", mode="after")
     @classmethod
     def validate_selected_template(cls, value: str | None) -> str | None:
+        """Reject template names not present in the known DIVI_TEMPLATES list."""
         if value is not None and value not in DIVI_TEMPLATES:
             raise ValueError(f"Unknown template: {value!r}.")
         return value
@@ -263,6 +272,7 @@ class OnboardingForm(OnboardingBaseModel):
     @field_validator("newsletter_link", mode="after")
     @classmethod
     def normalize_newsletter_url(cls, value: str | None) -> str | None:
+        """Normalize newsletter_link to a full URL when it looks like a domain or address."""
         if value and ("." in value or "://" in value):
             return str(normalize_web_url(value))
         return value
@@ -272,6 +282,7 @@ class OnboardingForm(OnboardingBaseModel):
     def validate_author_genres(
         cls, value: list[str], info: ValidationInfo
     ) -> list[str]:
+        """Reject unknown genre names and deduplicate while preserving order."""
         tree = (info.context or {}).get("genre_tree")
         if tree is not None:
             allowed = all_genre_names(tree)
