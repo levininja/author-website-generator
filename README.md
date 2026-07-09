@@ -91,6 +91,8 @@ npm run test:frontend
 
 This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and formatting. It is included in `requirements-dev.txt`.
 
+Note: be sure to activate the virtual environment with `source .venv/bin/activate` first.
+
 Check for violations:
 ```bash
 ruff check .
