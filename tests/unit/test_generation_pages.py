@@ -70,6 +70,21 @@ def _page_title_arg(call: list[str]) -> str:
     return ""
 
 
+def _page_name_arg(call: list[str]) -> str:
+    for arg in call:
+        if arg.startswith("--post_name="):
+            return arg[len("--post_name="):]
+    return ""
+
+
+def _book_detail_page_calls(capture_runner) -> list[list[str]]:
+    """Return page create calls that carry --post_name= (i.e. per-book detail pages)."""
+    return [
+        a for a in _page_create_calls(capture_runner)
+        if any(arg.startswith("--post_name=") for arg in a)
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -163,8 +178,8 @@ STANDALONE_BOOK = {
     "sample_chapter_name": "",
 }
 
-# 5 pages are always created; one ID per book is appended
-_PAGE_IDS = ["101", "102", "103", "104", "105"]
+# 4 static pages (Home, About, Books, Contact); per-book detail pages and CPT records follow
+_STATIC_PAGE_IDS = ["101", "102", "103", "104"]
 
 
 def _run_generate(author=None, books=None):
@@ -176,7 +191,12 @@ def _run_generate(author=None, books=None):
     if books is None:
         books = [BOOK]
 
-    capture_ids = _PAGE_IDS + [str(200 + i) for i in range(1, len(books) + 1)]
+    n = len(books)
+    # IDs: 4 static pages, then N per-book detail page IDs, then N book CPT IDs
+    book_detail_ids = [str(200 + i) for i in range(n)]
+    book_cpt_ids = [str(300 + i) for i in range(n)]
+    capture_ids = _STATIC_PAGE_IDS + book_detail_ids + book_cpt_ids
+
     runner = _make_runner()
     capture_runner = MagicMock(side_effect=capture_ids)
 
@@ -235,10 +255,10 @@ def test_contact_page_created():
     assert "Contact" in titles
 
 
-def test_book_detail_page_created():
+def test_no_generic_book_detail_page_created():
     _, capture_runner = _run_generate()
     titles = [_page_title_arg(c) for c in _page_create_calls(capture_runner)]
-    assert any("Book Detail" in t for t in titles)
+    assert "Book Detail" not in titles
 
 
 # ---------------------------------------------------------------------------
@@ -639,3 +659,177 @@ def test_all_wp_cli_calls_use_wp_cli_binary():
         assert args_list[0] == WP_CLI, (
             f"First arg should be WP_CLI path, got: {args_list[0]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# F027 — slug generation (pure function, no WP-CLI)
+# ---------------------------------------------------------------------------
+
+def test_slugify_title_basic_case():
+    from generation.pages import slugify_title
+    assert slugify_title("The Dark Forest") == "the-dark-forest"
+
+
+def test_slugify_title_with_apostrophe_punctuation():
+    from generation.pages import slugify_title
+    assert slugify_title("The Dragon's Eye") == "the-dragons-eye"
+
+
+def test_slugify_title_with_numbers():
+    from generation.pages import slugify_title
+    assert slugify_title("Book 2: Return") == "book-2-return"
+
+
+def test_slugify_title_all_punctuation_produces_fallback():
+    from generation.pages import slugify_title
+    assert slugify_title("!!!") == "book"
+
+
+def test_slugify_title_consecutive_spaces_collapse_to_single_hyphen():
+    from generation.pages import slugify_title
+    assert slugify_title("Hello   World") == "hello-world"
+
+
+def test_slugify_title_leading_and_trailing_hyphens_stripped():
+    from generation.pages import slugify_title
+    # A title that starts/ends with punctuation should not produce leading/trailing hyphens
+    result = slugify_title("!Hello World!")
+    assert not result.startswith("-")
+    assert not result.endswith("-")
+
+
+# ---------------------------------------------------------------------------
+# F027 — slug collision handling
+# ---------------------------------------------------------------------------
+
+def test_slug_collision_two_books_same_base_slug():
+    from generation.pages import _assign_slugs
+    books = [{"title": "Fire"}, {"title": "Fire!"}]
+    slugs = [slug for _, slug in _assign_slugs(books)]
+    assert slugs == ["fire", "fire-2"]
+
+
+def test_slug_collision_three_books_same_base_slug():
+    from generation.pages import _assign_slugs
+    books = [{"title": "Fire"}, {"title": "Fire!"}, {"title": "Fire!!"}]
+    slugs = [slug for _, slug in _assign_slugs(books)]
+    assert slugs == ["fire", "fire-2", "fire-3"]
+
+
+def test_slug_collision_only_on_third_book():
+    from generation.pages import _assign_slugs
+    books = [{"title": "Fire"}, {"title": "Water"}, {"title": "Fire!"}]
+    slugs = [slug for _, slug in _assign_slugs(books)]
+    assert slugs == ["fire", "water", "fire-2"]
+
+
+def test_slug_no_collision_distinct_titles():
+    from generation.pages import _assign_slugs
+    books = [{"title": "Alpha"}, {"title": "Beta"}]
+    slugs = [slug for _, slug in _assign_slugs(books)]
+    assert slugs == ["alpha", "beta"]
+
+
+# ---------------------------------------------------------------------------
+# F027 — per-book detail pages
+# ---------------------------------------------------------------------------
+
+def test_one_detail_page_created_per_book():
+    _, capture_runner = _run_generate(books=[BOOK])
+    assert len(_book_detail_page_calls(capture_runner)) == 1
+
+
+def test_two_detail_pages_created_for_two_books():
+    _, capture_runner = _run_generate(books=[BOOK, STANDALONE_BOOK])
+    assert len(_book_detail_page_calls(capture_runner)) == 2
+
+
+def test_zero_detail_pages_created_when_no_books():
+    _, capture_runner = _run_generate(books=[])
+    assert len(_book_detail_page_calls(capture_runner)) == 0
+
+
+def test_book_detail_page_title_matches_book_title():
+    _, capture_runner = _run_generate(books=[BOOK])
+    detail_call = _book_detail_page_calls(capture_runner)[0]
+    assert _page_title_arg(detail_call) == "The Dark Forest"
+
+
+def test_book_detail_page_uses_slug_derived_from_title():
+    _, capture_runner = _run_generate(books=[BOOK])
+    detail_call = _book_detail_page_calls(capture_runner)[0]
+    assert _page_name_arg(detail_call) == "the-dark-forest"
+
+
+def test_book_detail_page_content_has_book_detail_div():
+    _, capture_runner = _run_generate(books=[BOOK])
+    detail_call = _book_detail_page_calls(capture_runner)[0]
+    assert '<div class="book-detail">' in _page_content_arg(detail_call)
+
+
+def test_book_detail_pages_created_with_publish_status():
+    _, capture_runner = _run_generate(books=[BOOK])
+    for call in _book_detail_page_calls(capture_runner):
+        assert "--post_status=publish" in call
+
+
+def test_book_detail_pages_created_with_porcelain_flag():
+    _, capture_runner = _run_generate(books=[BOOK])
+    for call in _book_detail_page_calls(capture_runner):
+        assert "--porcelain" in call
+
+
+def test_book_detail_page_second_book_uses_collision_slug():
+    books = [{"title": "Fire", **{k: v for k, v in STANDALONE_BOOK.items() if k != "title"}},
+             {"title": "Fire!", **{k: v for k, v in STANDALONE_BOOK.items() if k != "title"}}]
+    _, capture_runner = _run_generate(books=books)
+    detail_calls = _book_detail_page_calls(capture_runner)
+    assert _page_name_arg(detail_calls[0]) == "fire"
+    assert _page_name_arg(detail_calls[1]) == "fire-2"
+
+
+# ---------------------------------------------------------------------------
+# F027 — Books listing page links
+# ---------------------------------------------------------------------------
+
+def _books_call(capture_runner):
+    return next(c for c in _page_create_calls(capture_runner) if _page_title_arg(c) == "Books")
+
+
+def test_books_listing_page_link_format():
+    _, capture_runner = _run_generate(books=[BOOK])
+    content = _page_content_arg(_books_call(capture_runner))
+    assert '<a href="/the-dark-forest/">The Dark Forest</a>' in content
+
+
+def test_books_listing_page_contains_links_to_all_books():
+    _, capture_runner = _run_generate(books=[BOOK, STANDALONE_BOOK])
+    content = _page_content_arg(_books_call(capture_runner))
+    assert '<a href="/the-dark-forest/">The Dark Forest</a>' in content
+    assert '<a href="/standalone-novel/">Standalone Novel</a>' in content
+
+
+def test_books_listing_page_wrapped_in_ul():
+    _, capture_runner = _run_generate(books=[BOOK])
+    content = _page_content_arg(_books_call(capture_runner))
+    assert content.startswith("<ul>")
+    assert content.endswith("</ul>")
+
+
+def test_books_listing_page_items_wrapped_in_li():
+    _, capture_runner = _run_generate(books=[BOOK])
+    content = _page_content_arg(_books_call(capture_runner))
+    assert "<li>" in content
+
+
+def test_empty_books_list_listing_page_still_created():
+    _, capture_runner = _run_generate(books=[])
+    titles = [_page_title_arg(c) for c in _page_create_calls(capture_runner)]
+    assert "Books" in titles
+
+
+def test_empty_books_list_listing_page_has_empty_ul():
+    _, capture_runner = _run_generate(books=[])
+    content = _page_content_arg(_books_call(capture_runner))
+    assert "<ul>" in content
+    assert "<li>" not in content

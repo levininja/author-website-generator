@@ -1,6 +1,7 @@
 """Generate WordPress pages and book CPT records for an author's site via WP-CLI."""
 
 import json
+import re
 from typing import Callable, Optional, Sequence
 
 from generation.subprocess_runner import default_capture_runner, default_runner
@@ -12,6 +13,37 @@ def _wp_flags(site_path: str) -> list[str]:
     return [f"--path={site_path}", "--allow-root"]
 
 
+def slugify_title(title: str) -> str:
+    """Convert a book title to a URL-safe slug.
+
+    Non-alphanumeric characters (except hyphens) are removed, whitespace runs
+    become single hyphens, and leading/trailing hyphens are stripped.
+    Falls back to "book" if nothing alphanumeric remains.
+    """
+    slug = title.lower()
+    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+    slug = re.sub(r"\s+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    slug = slug.strip("-")
+    return slug or "book"
+
+
+def _assign_slugs(books: list[dict]) -> list[tuple[dict, str]]:
+    """Pair each book with a unique URL slug; appends -2, -3, … on collision."""
+    seen: dict[str, int] = {}
+    result = []
+    for book in books:
+        base = slugify_title(book["title"])
+        if base not in seen:
+            seen[base] = 1
+            slug = base
+        else:
+            seen[base] += 1
+            slug = f"{base}-{seen[base]}"
+        result.append((book, slug))
+    return result
+
+
 def _create_page(capture, site_path: str, title: str, content: str) -> str:
     """Create a WordPress page and return its post ID (as a string)."""
     return capture([
@@ -20,6 +52,20 @@ def _create_page(capture, site_path: str, title: str, content: str) -> str:
         f"--post_title={title}",
         f"--post_content={content}",
         "--post_status=publish",
+        "--porcelain",
+        *_wp_flags(site_path),
+    ]).strip()
+
+
+def _create_book_detail_page(capture, site_path: str, book: dict, slug: str) -> str:
+    """Create a per-book detail page with its slug set; return the post ID."""
+    return capture([
+        WP_CLI, "post", "create",
+        "--post_type=page",
+        f"--post_title={book['title']}",
+        f"--post_content={_book_detail_page_content()}",
+        "--post_status=publish",
+        f"--post_name={slug}",
         "--porcelain",
         *_wp_flags(site_path),
     ]).strip()
@@ -117,8 +163,12 @@ def _about_page_content(author: dict) -> str:
     return f"{headshot_html}<p>{bio_short}</p>{bio_long_html}"
 
 
-def _books_page_content() -> str:
-    return '<div class="books-listing"></div>'
+def _books_page_content(books_with_slugs: list[tuple]) -> str:
+    items = "".join(
+        f'<li><a href="/{slug}/">{book["title"]}</a></li>'
+        for book, slug in books_with_slugs
+    )
+    return f"<ul>{items}</ul>"
 
 
 def _contact_page_content(author: dict) -> str:
@@ -142,15 +192,19 @@ def generate_pages(
     run = runner or default_runner
     capture = capture_runner or default_capture_runner
 
+    books_with_slugs = _assign_slugs(serialized_books)
+
     home_id = _create_page(capture, site_path, "Home", _home_page_content(serialized_author))
     _create_page(capture, site_path, "About", _about_page_content(serialized_author))
-    _create_page(capture, site_path, "Books", _books_page_content())
+    _create_page(capture, site_path, "Books", _books_page_content(books_with_slugs))
     _create_page(capture, site_path, "Contact", _contact_page_content(serialized_author))
-    _create_page(capture, site_path, "Book Detail", _book_detail_page_content())
+
+    for book, slug in books_with_slugs:
+        _create_book_detail_page(capture, site_path, book, slug)
 
     run([WP_CLI, "option", "update", "page_on_front", home_id, *_wp_flags(site_path)])
     run([WP_CLI, "option", "update", "show_on_front", "page", *_wp_flags(site_path)])
 
-    for book in serialized_books:
+    for book, slug in books_with_slugs:
         book_id = _create_book_cpt(capture, site_path, book)
         _set_book_meta(run, site_path, book_id, book)
