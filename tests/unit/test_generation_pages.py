@@ -371,7 +371,7 @@ def test_contact_page_content_includes_contact_email():
 # ---------------------------------------------------------------------------
 
 def test_home_page_id_passed_to_page_on_front_option():
-    runner, capture_runner = _run_generate()
+    runner, _capture_runner = _run_generate()
     # Capture runner returns "101" for the first call (Home page)
     options = _option_calls(runner)
     assert options.get("page_on_front") == "101"
@@ -602,7 +602,7 @@ def test_no_crash_when_sample_chapter_url_is_none():
 
 
 def test_no_crash_when_books_list_is_empty():
-    runner, capture_runner = _run_generate(books=[])
+    _runner, capture_runner = _run_generate(books=[])
     assert len(_book_cpt_create_calls(capture_runner)) == 0
 
 

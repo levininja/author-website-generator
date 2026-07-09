@@ -2,8 +2,14 @@
 
 from pathlib import Path
 
+from django.core.files.storage import Storage
+from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
+from django.db.models import Model
+from django.db.models.fields.files import FieldFile
+from django.utils.datastructures import MultiValueDict
 
+from models.onboarding import GenreTree, OnboardingForm
 from onboarding.models import (
     Author,
     AuthorCategory,
@@ -19,22 +25,27 @@ from onboarding.models import (
 )
 
 
-def _optional_text(value):
+def _optional_text(value: object) -> str:
     return str(value) if value is not None else ""
 
 
-def _original_basename(upload):
+def _original_basename(upload: UploadedFile | None) -> str:
     if upload is None:
         return ""
     return Path(str(upload.name).replace("\\", "/")).name[:255]
 
 
-def _track_file(field, saved_files):
+def _track_file(field: FieldFile, saved_files: list[tuple[Storage, str]]) -> None:
     if field and field.name:
         saved_files.append((field.storage, field.name))
 
 
-def _assign_upload(instance, field_name, upload, saved_files):
+def _assign_upload(
+    instance: Model,
+    field_name: str,
+    upload: UploadedFile | None,
+    saved_files: list[tuple[Storage, str]],
+) -> None:
     if upload is None:
         return
     field = getattr(instance, field_name)
@@ -42,7 +53,7 @@ def _assign_upload(instance, field_name, upload, saved_files):
     _track_file(field, saved_files)
 
 
-def _delete_files(saved_files):
+def _delete_files(saved_files: list[tuple[Storage, str]]) -> None:
     for storage, name in reversed(saved_files):
         local_path = None
         try:
@@ -64,7 +75,7 @@ def _delete_files(saved_files):
                 parent = parent.parent
 
 
-def _author_files(author):
+def _author_files(author: Author) -> list[tuple[Storage, str]]:
     fields = []
     _track_file(author.headshot, fields)
     for book in author.books.all():
@@ -78,7 +89,7 @@ def _author_files(author):
 
 
 @transaction.atomic
-def sync_genre_catalog(tree):
+def sync_genre_catalog(tree: GenreTree) -> None:
     """Replace the lookup catalog with one validated three-level tree."""
     BookSubgenre.objects.all().delete()
     BookGenre.objects.all().delete()
@@ -95,8 +106,8 @@ def sync_genre_catalog(tree):
             )
 
 
-def genre_tree_from_database():
-    tree = {}
+def genre_tree_from_database() -> GenreTree:
+    tree: GenreTree = {}
     categories = BookCategory.objects.prefetch_related("genres__subgenres")
     for category in categories:
         tree[category.name] = {
@@ -106,7 +117,7 @@ def genre_tree_from_database():
     return tree
 
 
-def _persist_author_selections(author, selections):
+def _persist_author_selections(author: Author, selections: list[str]) -> None:
     for position, name in enumerate(selections, start=1):
         category = BookCategory.objects.filter(name=name).first()
         if category is not None:
@@ -135,7 +146,11 @@ def _persist_author_selections(author, selections):
         raise ValueError(f"Unknown genre selection: {name}.")
 
 
-def persist_onboarding(form, files, replace_author=None):
+def persist_onboarding(
+    form: OnboardingForm,
+    files: MultiValueDict[str, UploadedFile],
+    replace_author: Author | None = None,
+) -> Author:
     """Atomically persist one author and all onboarding-owned book data."""
     saved_files = []
     try:
@@ -316,11 +331,11 @@ def persist_onboarding(form, files, replace_author=None):
     return author
 
 
-def _file_url(field):
+def _file_url(field: FieldFile) -> str | None:
     return field.url if field and field.name else None
 
 
-def _author_genre_selections(author):
+def _author_genre_selections(author: Author) -> list[str]:
     selections = [
         (item.display_position, item.category.name)
         for item in author.authorcategory_set.select_related("category")
@@ -336,7 +351,7 @@ def _author_genre_selections(author):
     return [name for _, name in sorted(selections)]
 
 
-def serialize_author(author):
+def serialize_author(author: Author) -> dict[str, object]:
     return {
         "id": str(author.pk),
         "name": author.name,
@@ -366,7 +381,7 @@ def serialize_author(author):
     }
 
 
-def serialize_book(book):
+def serialize_book(book: Book) -> dict[str, object]:
     return {
         "id": str(book.pk),
         "author_id": str(book.author_id),

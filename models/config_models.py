@@ -1,14 +1,18 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class ServerType(str, Enum):
+class ServerType(StrEnum):
+    """Supported provisioning server categories."""
+
     standard = "standard"
     ecommerce = "ecommerce"
 
 
 class WebsiteServer(BaseModel):
+    """Configured Cloudways server available for generated sites."""
+
     id: str
     name: str
     type: ServerType
@@ -17,6 +21,8 @@ class WebsiteServer(BaseModel):
 
 
 class AppConfig(BaseModel):
+    """Validated application configuration loaded from YAML."""
+
     website_servers: list[WebsiteServer]
 
     def get_server(self, server_id: str) -> WebsiteServer | None:

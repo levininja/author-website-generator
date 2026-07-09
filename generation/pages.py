@@ -44,7 +44,12 @@ def _assign_slugs(books: list[dict]) -> list[tuple[dict, str]]:
     return result
 
 
-def _create_page(capture, site_path: str, title: str, content: str) -> str:
+def _create_page(
+    capture: Callable[[Sequence[str]], str],
+    site_path: str,
+    title: str,
+    content: str,
+) -> str:
     """Create a WordPress page and return its post ID (as a string)."""
     return capture([
         WP_CLI, "post", "create",
@@ -57,7 +62,12 @@ def _create_page(capture, site_path: str, title: str, content: str) -> str:
     ]).strip()
 
 
-def _create_book_detail_page(capture, site_path: str, book: dict, slug: str) -> str:
+def _create_book_detail_page(
+    capture: Callable[[Sequence[str]], str],
+    site_path: str,
+    book: dict,
+    slug: str,
+) -> str:
     """Create a per-book detail page with its slug set; return the post ID."""
     return capture([
         WP_CLI, "post", "create",
@@ -71,7 +81,11 @@ def _create_book_detail_page(capture, site_path: str, book: dict, slug: str) -> 
     ]).strip()
 
 
-def _create_book_cpt(capture, site_path: str, book: dict) -> str:
+def _create_book_cpt(
+    capture: Callable[[Sequence[str]], str],
+    site_path: str,
+    book: dict,
+) -> str:
     """Create an awg_book CPT record and return its post ID."""
     return capture([
         WP_CLI, "post", "create",
@@ -84,11 +98,22 @@ def _create_book_cpt(capture, site_path: str, book: dict) -> str:
     ]).strip()
 
 
-def _set_meta(run, site_path: str, post_id: str, key: str, value: str) -> None:
+def _set_meta(
+    run: Callable[[Sequence[str]], None],
+    site_path: str,
+    post_id: str,
+    key: str,
+    value: str,
+) -> None:
     run([WP_CLI, "post", "meta", "update", post_id, key, value, *_wp_flags(site_path)])
 
 
-def _set_book_meta(run, site_path: str, post_id: str, book: dict) -> None:
+def _set_book_meta(
+    run: Callable[[Sequence[str]], None],
+    site_path: str,
+    post_id: str,
+    book: dict,
+) -> None:
     """Populate all registered meta fields on a book CPT record."""
     series = book.get("series")
     subgenre = book.get("subgenre")
@@ -205,6 +230,6 @@ def generate_pages(
     run([WP_CLI, "option", "update", "page_on_front", home_id, *_wp_flags(site_path)])
     run([WP_CLI, "option", "update", "show_on_front", "page", *_wp_flags(site_path)])
 
-    for book, slug in books_with_slugs:
+    for book, _slug in books_with_slugs:
         book_id = _create_book_cpt(capture, site_path, book)
         _set_book_meta(run, site_path, book_id, book)

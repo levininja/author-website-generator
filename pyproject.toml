@@ -22,8 +22,6 @@ select = [
     "RUF",  # Ruff-specific rules
 ]
 ignore = [
-    "ANN101",  # Missing type annotation for `self` — never needed
-    "ANN102",  # Missing type annotation for `cls` — never needed
     "D100",    # Missing docstring in public module — too noisy
     "D104",    # Missing docstring in public package — too noisy
     "D106",    # Missing docstring in public nested class — too noisy for Meta classes

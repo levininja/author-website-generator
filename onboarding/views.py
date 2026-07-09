@@ -1,15 +1,18 @@
 import json
+from collections.abc import Callable
 from pathlib import Path
 from uuid import UUID
 
+from django.core.files.uploadedfile import UploadedFile
 from django.db import DatabaseError
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.datastructures import MultiValueDict
 from django.views.decorators.http import require_GET, require_POST
 from PIL import Image, UnidentifiedImageError
 from pydantic import ValidationError
 
-from models.onboarding import DIVI_TEMPLATES, OnboardingForm, validate_genre_tree
+from models.onboarding import DIVI_TEMPLATES, GenreTree, OnboardingForm, validate_genre_tree
 from onboarding.models import Author, Book
 from onboarding.services import (
     genre_tree_from_database,
@@ -27,16 +30,16 @@ IMAGE_TYPES = {
 }
 
 
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     return redirect("/onboard")
 
 
-def onboard(request):
+def onboard(request: HttpRequest) -> HttpResponse:
     return render(request, "onboarding/onboard.html", {"divi_templates": DIVI_TEMPLATES})
 
 
-def _format_validation_errors(exc):
-    errors = {}
+def _format_validation_errors(exc: ValidationError) -> dict[str, str]:
+    errors: dict[str, str] = {}
     for error in exc.errors():
         field = ".".join(str(part) for part in error["loc"]) or "form"
         message = error["msg"]
@@ -46,11 +49,11 @@ def _format_validation_errors(exc):
     return errors
 
 
-def _load_genre_tree():
+def _load_genre_tree() -> GenreTree:
     return validate_genre_tree(genre_tree_from_database())
 
 
-def _validate_image(upload):
+def _validate_image(upload: UploadedFile) -> str | None:
     if upload.size > IMAGE_LIMIT:
         return "Images must be 10 MB or smaller."
 
@@ -76,7 +79,7 @@ def _validate_image(upload):
     return None
 
 
-def _validate_pdf(upload):
+def _validate_pdf(upload: UploadedFile) -> str | None:
     if upload.size > PDF_LIMIT:
         return "PDF files must be 20 MB or smaller."
     if upload.content_type != "application/pdf" or Path(upload.name).suffix.lower() != ".pdf":
@@ -90,14 +93,14 @@ def _validate_pdf(upload):
 
 
 def _validate_file_reference(
-    files,
-    errors,
-    logical_path,
-    supplied_key,
-    expected_key,
-    validator,
-    missing_message,
-):
+    files: MultiValueDict[str, UploadedFile],
+    errors: dict[str, str],
+    logical_path: str,
+    supplied_key: str | None,
+    expected_key: str,
+    validator: Callable[[UploadedFile], str | None],
+    missing_message: str,
+) -> None:
     if supplied_key != expected_key:
         errors[logical_path] = "Invalid upload reference."
         return
@@ -112,8 +115,11 @@ def _validate_file_reference(
         errors[expected_key] = error
 
 
-def _validate_uploaded_files(form, files):
-    errors = {}
+def _validate_uploaded_files(
+    form: OnboardingForm,
+    files: MultiValueDict[str, UploadedFile],
+) -> dict[str, str]:
+    errors: dict[str, str] = {}
     for book_index, book in enumerate(form.books):
         _validate_file_reference(
             files,
@@ -184,7 +190,7 @@ def _validate_uploaded_files(form, files):
 
 
 @require_POST
-def create_onboarding(request):
+def create_onboarding(request: HttpRequest) -> JsonResponse:
     if request.content_type != "multipart/form-data":
         return JsonResponse(
             {"message": "Request body must be multipart form data."},
@@ -261,7 +267,7 @@ def create_onboarding(request):
 
 
 @require_GET
-def genres(request):
+def genres(request: HttpRequest) -> JsonResponse:
     try:
         tree = _load_genre_tree()
     except ValueError:
@@ -273,7 +279,7 @@ def genres(request):
 
 
 @require_GET
-def author_detail(request, author_id):
+def author_detail(request: HttpRequest, author_id: UUID) -> JsonResponse:
     author = (
         Author.objects.prefetch_related(
             "authorcategory_set__category",
@@ -289,7 +295,7 @@ def author_detail(request, author_id):
 
 
 @require_GET
-def author_books(request, author_id):
+def author_books(request: HttpRequest, author_id: UUID) -> JsonResponse:
     if not Author.objects.filter(pk=author_id).exists():
         return JsonResponse({"message": "Author not found."}, status=404)
     books = (
@@ -304,7 +310,7 @@ def author_books(request, author_id):
 
 
 @require_GET
-def book_detail(request, book_id):
+def book_detail(request: HttpRequest, book_id: UUID) -> JsonResponse:
     book = (
         Book.objects.select_related("genre__category", "subgenre", "series")
         .prefetch_related(
@@ -320,7 +326,7 @@ def book_detail(request, book_id):
 
 
 @require_GET
-def download_sample_chapter(request, book_id):
+def download_sample_chapter(request: HttpRequest, book_id: UUID) -> FileResponse:
     book = (
         Book.objects.filter(pk=book_id)
         .only("sample_chapter_path", "sample_chapter_name")
@@ -343,7 +349,7 @@ def download_sample_chapter(request, book_id):
 
 
 @require_POST
-def generate(request):
+def generate(request: HttpRequest) -> JsonResponse:
     try:
         payload = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):

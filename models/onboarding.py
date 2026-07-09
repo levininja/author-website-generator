@@ -1,7 +1,7 @@
 """Validated data contracts for author onboarding."""
 
 import re
-from typing import Any, Literal
+from typing import Any, Literal, Self
 from urllib.parse import urlsplit
 
 from pydantic import (
@@ -51,6 +51,7 @@ def validate_genre_tree(value: Any) -> GenreTree:
 
 
 def all_genre_names(tree: GenreTree) -> set[str]:
+    """Return every category, genre, and subgenre name in a genre tree."""
     names = set(tree)
     for genres in tree.values():
         names.update(genres)
@@ -60,6 +61,7 @@ def all_genre_names(tree: GenreTree) -> set[str]:
 
 
 def normalize_web_url(value: Any) -> Any:
+    """Normalize user-entered web addresses into absolute HTTP URLs."""
     if not isinstance(value, str):
         return value
     stripped = value.strip()
@@ -82,10 +84,14 @@ def normalize_web_url(value: Any) -> Any:
 
 
 class OnboardingBaseModel(BaseModel):
+    """Base model for onboarding payloads with stripped string inputs."""
+
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class BookReview(OnboardingBaseModel):
+    """Submitted review or endorsement for a book."""
+
     reviewer_name: str = Field(min_length=1)
     credentials: str | None = None
     quotation: str = Field(min_length=1)
@@ -112,11 +118,15 @@ class BookReview(OnboardingBaseModel):
 
 
 class Award(OnboardingBaseModel):
+    """Submitted award badge for a book."""
+
     name: str = Field(min_length=1)
     icon_key: str = Field(min_length=1)
 
 
 class BookEntry(OnboardingBaseModel):
+    """Submitted book metadata and related marketing content."""
+
     title: str = Field(min_length=1)
     cover_image_key: str = Field(min_length=1)
     description: str = Field(min_length=1)
@@ -156,7 +166,7 @@ class BookEntry(OnboardingBaseModel):
         return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
-    def validate_genre_and_series(self, info: ValidationInfo):
+    def validate_genre_and_series(self, info: ValidationInfo) -> Self:
         if any(review.credentials for review in self.editorial_reviews):
             raise ValueError(
                 "Editorial reviews identify a publication and cannot include "
@@ -187,6 +197,8 @@ class BookEntry(OnboardingBaseModel):
 
 
 class SocialLinks(OnboardingBaseModel):
+    """Submitted author social profile URLs."""
+
     twitter: AnyHttpUrl | None = None
     instagram: AnyHttpUrl | None = None
     facebook: AnyHttpUrl | None = None
@@ -203,6 +215,8 @@ class SocialLinks(OnboardingBaseModel):
 
 
 class OnboardingForm(OnboardingBaseModel):
+    """Complete validated author onboarding submission."""
+
     author_name: str = Field(min_length=1)
     author_email: EmailStr
     site_domain: str = Field(min_length=1)

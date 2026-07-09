@@ -1,5 +1,7 @@
 """Semantic database models for authors, books, genres, and series."""
 
+from __future__ import annotations
+
 import uuid
 from pathlib import Path
 from typing import ClassVar
@@ -7,36 +9,36 @@ from typing import ClassVar
 from django.db import models
 
 
-def _randomized_name(original_name):
+def _randomized_name(original_name: str) -> str:
     return f"{uuid.uuid4().hex}{Path(original_name).suffix.lower()}"
 
 
-def author_headshot_path(instance, filename):
+def author_headshot_path(instance: Author, filename: str) -> str:
     return f"authors/{instance.pk}/headshot/{_randomized_name(filename)}"
 
 
-def book_cover_path(instance, filename):
+def book_cover_path(instance: Book, filename: str) -> str:
     return (
         f"authors/{instance.author_id}/books/{instance.pk}/cover/"
         f"{_randomized_name(filename)}"
     )
 
 
-def sample_chapter_path(instance, filename):
+def sample_chapter_path(instance: Book, filename: str) -> str:
     return (
         f"authors/{instance.author_id}/books/{instance.pk}/sample/"
         f"{_randomized_name(filename)}"
     )
 
 
-def reviewer_photo_path(instance, filename):
+def reviewer_photo_path(instance: BookReview, filename: str) -> str:
     return (
         f"authors/{instance.book.author_id}/books/{instance.book_id}/"
         f"reviews/{instance.pk}/{_randomized_name(filename)}"
     )
 
 
-def award_icon_path(instance, filename):
+def award_icon_path(instance: BookAward, filename: str) -> str:
     return (
         f"authors/{instance.book.author_id}/books/{instance.book_id}/"
         f"awards/{instance.pk}/{_randomized_name(filename)}"
