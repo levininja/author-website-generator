@@ -294,66 +294,241 @@ SQLite's single-writer model means simultaneous requests (Django HTTP server + b
 
 ---
 
+### F038 — Production provisioning orchestrator and preflight checks
+
+**Type:** Feature
+**As** a developer, I can trigger the full production provisioning pipeline from a single entry point that runs preflight checks, executes each step in order, and fails loudly with a specific error if anything goes wrong — so no orphaned Cloudways apps are created from failed runs.
+
+**Pipeline order (from PIPELINE.md):** preflight → Step 1 (Cloudways app) → Step 2 (clone starter kit) → Step 3 (WP core install) → Step 4 (import Design System DB) → Step 5 (configure site) → Step 6 (Cloudflare DNS) → DNS wait → Step 7 (attach domain + SSL) → Step 8 (send welcome email).
+
+**Owner module:** `provisioning/orchestrator.py`
+
+**Preflight checks (must all pass before Step 1 — no Cloudways app is created if any fail):**
+- SSH connectivity to the shared non-ecommerce server
+- WP-CLI installed and callable on the server (`wp --info` exits 0)
+- GitHub SSH access (`ssh -T git@github.com` exits 1 with "successfully authenticated" in stderr — this is GitHub's expected non-zero exit; not an error)
+- Selected Design System manifest and all required exports are present on disk before provisioning begins
+- Each failed check raises a specific typed exception identifying which check failed; the orchestrator surfaces that message to the caller
+
+**DNS wait (between Step 6 and Step 7):**
+- Poll Cloudflare's `1.1.1.1` DNS-over-HTTPS endpoint until the client domain resolves to the expected server IP
+- Configurable timeout (default 10 minutes); raises `DnsTimeoutError` on expiry
+- Job status API reports "Waiting for DNS propagation" during this phase (visible in F010 UI)
+
+**Failure behavior:**
+- If any step fails after Step 1 has created a Cloudways app, the orchestrator logs the orphaned app ID and raises — it does not auto-delete (risk of destroying a real app on a bug)
+- No partial provisioning state is silently swallowed; every failure surfaces a typed exception with the failing step identified
+
+**Depends on:** F011 (background job), F012 (Cloudways client), F013 (Cloudflare client), F014 (SSH/WP-CLI), F015, F016, F017, F006
+
+**Tests cover:** preflight failure for each check (SSH, WP-CLI, GitHub, Design System), correct step ordering, DNS timeout, step failure after Cloudways app created (orphan logged, exception raised), and full happy-path pipeline mock
+
+---
+
 ### F010 — Implement the pipeline status UI page
 
 **Type:** Feature
-**As** an end user, I can see the progress of long-running production provisioning.
+**As** an end user, I can see the current step of production provisioning in real time so I know the job is running and am not left staring at a spinner with no feedback.
+
+**Owner:** a React component polling `GET /provision/<job_id>/status`
+
+**UI states to handle:**
+- `pending` — job queued, not yet started
+- `running:<step_name>` — one of: preflight, create_app, clone_starter_kit, install_wordpress, import_database, configure_site, create_dns, waiting_dns, attach_domain_ssl, send_email
+- `complete` — show success message and live site URL
+- `failed` — show the specific step that failed and a human-readable error; no stack trace exposed
+
+**"Waiting for DNS propagation"** is a distinct named state within `running` so the UI can show a specific message (DNS propagation can take minutes and without feedback looks like a hang).
+
+**Polling:** poll every 5 seconds while in `pending` or `running`; stop polling on `complete` or `failed`
+
+**Depends on:** F011 (job model with step-level status), F038 (orchestrator that writes step names to job state)
+
+**Tests cover:** each UI state renders correctly; polling stops on terminal states; error message is shown without internal details
 
 ---
 
 ### F011 — Run production provisioning as a background job
 
 **Type:** Feature
-**As** an end user, I can start production provisioning without holding an HTTP request open.
+**As** an end user, I can trigger production provisioning without holding an HTTP connection open for 5–10 minutes.
+
+**Owner module:** `provisioning/` Django app; uses the same background job queue chosen for generation (F030)
+
+**Job model (`ProvisioningJob`):**
+- `id` — UUID
+- `author_id` — FK to Author
+- `status` — `pending | running | complete | failed`
+- `current_step` — string name of the step currently executing (written by the orchestrator at the start of each step); used by F010 status UI
+- `error_message` — human-readable failure description (no internal exception details); null on success
+- `site_url` — populated on completion
+- `created_at`, `started_at`, `completed_at`
+
+**API:**
+- `POST /provision` — validates author ID, enqueues a `ProvisioningJob`, returns `{ job_id }` immediately
+- `GET /provision/<job_id>/status` — returns current job state, `current_step`, `site_url` (if complete), `error_message` (if failed)
+
+**Constraints:**
+- Only one active provisioning job per author at a time; reject a second `POST /provision` for the same author if a job is already `pending` or `running`
+- Job records are retained after completion for audit; they are not deleted on success or failure
+
+**Tests cover:** job created on POST, duplicate-job rejection, status endpoint for each job state, worker picks up and executes the job
 
 ---
 
 ### F012 — Integrate the Cloudways API client
 
 **Type:** Feature
-**As** a developer, I can create and configure production applications through Cloudways.
+**As** a developer, I can create a new WordPress application on the shared non-ecommerce Cloudways server and attach a domain to it through a typed Python client, so provisioning steps 1 and 7 can be automated.
+
+**Owner module:** `provisioning/clients/cloudways.py`
+
+**Step 1 — Create application:**
+- `POST` to Cloudways API to create a new WordPress app on the shared non-ecommerce server (server ID from `config.yaml`)
+- App creation is **asynchronous** on Cloudways: the API returns immediately with an operation ID; the client must poll until the operation status is `"success"` before returning the new app ID
+- Raises `ProvisioningTimeoutError` if the app is not running within a configurable timeout (default 5 minutes)
+- Raises `CloudwaysApiError` with the API error body on any non-2xx response
+
+**Step 7 — Attach domain + SSL:**
+- `POST` to Cloudways API to attach the client's domain to the app
+- Triggers Let's Encrypt SSL provisioning; also async — poll until SSL status is active
+- Must only be called after DNS resolves (orchestrator enforces this)
+- Raises `SslProvisioningTimeoutError` on timeout
+
+**Auth:** Cloudways API key from env var; never logged or returned in error messages
+
+**Tests:** mock HTTP layer; cover successful create + poll, create timeout, API error, successful domain attach + SSL poll, SSL timeout
 
 ---
 
 ### F013 — Integrate the Cloudflare API client
 
 **Type:** Feature
-**As** a developer, I can configure production DNS records through Cloudflare.
+**As** a developer, I can create a DNS A record pointing a client's domain to the production server IP through a typed Python client, so provisioning step 6 can be automated.
+
+**Owner module:** `provisioning/clients/cloudflare.py`
+
+**Step 6 — Create A record:**
+- Look up the Cloudflare zone ID for the client's domain dynamically via `GET /zones?name=<domain>` — do not hardcode zone IDs
+- Raises `ZoneNotFoundError` if the domain is not found in the Cloudflare account (likely means the client hasn't moved their nameservers yet)
+- Create an A record pointing the domain to the shared non-ecommerce server IP (from `config.yaml`)
+- Raises `CloudflareApiError` with the API error body on any non-2xx response
+
+**DNS wait (called by orchestrator, not the Cloudflare client directly):**
+- Polls `https://1.1.1.1/dns-query?name=<domain>&type=A` (Cloudflare DNS-over-HTTPS) until the response contains the expected server IP
+- Configurable polling interval (default 10 seconds) and timeout (default 10 minutes)
+- Raises `DnsTimeoutError` on timeout
+
+**Auth:** Cloudflare API token from env var; scoped to DNS edit on the relevant zone; never logged
+
+**Tests:** mock HTTP layer; cover zone lookup success, zone not found, A record creation success, API error, DNS poll resolves on first try, DNS poll resolves after N retries, DNS timeout
 
 ---
 
-### F014 — Run SSH and WP-CLI commands reliably
+### F014 — Run SSH and WP-CLI commands over production SSH reliably
 
 **Type:** Feature
-**As** a developer, I can execute production setup commands with predictable failures and timeouts.
+**As** a developer, I can run SSH commands and WP-CLI operations on the production Cloudways server with predictable failure modes, timeouts, and error output — so provisioning steps 2–5 can be automated and failures are debuggable.
+
+**Owner module:** `provisioning/clients/ssh.py`
+
+**Capabilities:**
+- Open an SSH connection to the Cloudways server using credentials from env vars (host, port, username, private key path)
+- Execute arbitrary shell commands and return stdout; raise `SshCommandError(command, exit_code, stderr)` on non-zero exit
+- Per-command configurable timeout; raises `SshTimeoutError` on expiry
+- Fail loudly on connection failure (wrong host, auth failure, network timeout) with a typed `SshConnectionError`
+
+**Preflight check integration:**
+- `check_ssh_connectivity()` — connects and runs `echo ok`; used by the orchestrator preflight
+- `check_wp_cli()` — runs `wp --info`; used by the orchestrator preflight
+- `check_github_ssh()` — runs `ssh -T git@github.com`; expects exit code 1 with "successfully authenticated" in stderr (GitHub's normal behavior); raises if that string is absent
+
+**WP-CLI wrapper:** thin helpers in `provisioning/clients/wpcli.py` that call `ssh.execute()` with prefixed `wp` commands and the correct `--path` and `--allow-root` flags; these are the production equivalent of the local `generation/subprocess_runner.py` functions
+
+**Tests:** mock paramiko (or equivalent SSH library); cover successful command, non-zero exit, timeout, connection failure, each preflight check passing and failing
 
 ---
 
 ### F015 — Clone the starter kit into a production application
 
 **Type:** Feature
-**As** an end user, I can have generated code copied into a production application.
+**As** an end user, the generated code is present in my production Cloudways app so WordPress can be installed on top of it.
+
+**Owner module:** `provisioning/steps/wordpress.py` — `clone_starter_kit(ssh, app_path)`
+
+**What it does (pipeline Step 2):**
+- SSH into the Cloudways server (via F014 client)
+- `git clone` the starter kit repo (base Divi child theme + AWG mu-plugin + standard plugin list) into the new app's directory
+- The repo requires a GitHub deploy key on the server; if the SSH key is absent or invalid, `clone_starter_kit` raises `StarterKitCloneError` with the git stderr
+- Idempotency: if the app directory already contains a valid `.git` folder, skip and log; do not re-clone (prevents Step 2 from destroying a partially-complete provisioning run if retried)
+
+**Depends on:** F014 (SSH client), F012 (app path from Cloudways app creation)
+
+**Tests:** mock SSH; cover successful clone, SSH auth failure, directory already cloned (idempotent skip)
 
 ---
 
 ### F016 — Install WordPress core in production
 
 **Type:** Feature
-**As** an end user, I can have WordPress installed in the production application.
+**As** an end user, WordPress is installed in my production application so the site can run.
+
+**Owner module:** `provisioning/steps/wordpress.py` — `install_wordpress_core(ssh, app_path, site_config)`
+
+**What it does (pipeline Steps 3–4):**
+
+*Step 3 — Install core:*
+- WP-CLI `core download` + `core install` with site URL, title, admin credentials
+- **Idempotency guard:** check `is_wordpress_installed()` first (presence of `wp-includes/version.php`); skip if already installed and log; this prevents double-installs if the step is retried
+- Admin credentials generated by the orchestrator and stored in the `ProvisioningJob` record for use in Step 8 (welcome email)
+
+*Step 4 — Import starter database:*
+- WP-CLI `db import` with the selected Design System's exported SQL (Theme Builder templates, standard pages: Home, About, Books, Contact)
+- **Skipped if Step 3 was skipped** (WP already installed implies DB already imported)
+- Raises `DatabaseImportError` if the import fails
+
+**Depends on:** F014 (WP-CLI SSH wrapper), F015 (starter kit present), F024 (Design System exports on disk)
+
+**Tests:** mock SSH; cover fresh install, idempotent skip (already installed), DB import success, DB import failure, skip-DB-if-skip-WP behavior
 
 ---
 
-### F017 — Configure the production site
+### F017 — Configure the production site with author data
 
 **Type:** Feature
-**As** an end user, I can have generated author content and branding applied to the production WordPress site.
+**As** an end user, my generated author content, branding, and book data are written into the production WordPress site so it reflects my actual submitted information.
+
+**Owner module:** `provisioning/steps/wordpress.py` — `configure_site(ssh, app_path, author, books)`
+
+**What it does (pipeline Step 5):**
+- WP-CLI `option update` for: site name, tagline, author short bio, author long bio, primary color, secondary color, selected Design System, Kit newsletter form ID/URL, headshot URL
+- WP-CLI to create `awg_book` CPT records for each book (title, description, cover image, buy links, genre, subgenre, series info, reviews, awards — all book fields from onboarding)
+- Social links written to `awg_social_links` option as JSON
+- **Validation:** after writing each option, read it back with `wp option get` and compare; raise `ConfigurationMismatchError` if the written value does not match what was read back
+- Headshot and cover images are served from Cloudflare R2 (URLs, not file transfers — the files are already in R2 from onboarding upload)
+
+**Depends on:** F014 (WP-CLI SSH wrapper), F016 (WordPress installed)
+
+**Tests:** mock SSH; cover all option writes, readback validation pass, readback mismatch raises, book CPT creation for standalone and series books, optional field handling (no headshot, no social links, no newsletter)
 
 ---
 
 ### F006 — Send the client a production welcome email
 
 **Type:** Feature
-**As** a client author, I receive the production URL and credentials after deployment.
+**As** a client author, I receive my WordPress admin URL and credentials by email after my site is provisioned, so I can log in and begin customizing it.
+
+**Owner module:** `provisioning/steps/dns_email.py` — `send_welcome_email(author, site_url, admin_url, admin_username, admin_password)`
+
+**What it does (pipeline Step 8):**
+- Send an email to `author.contact_email` containing: the live site URL, the WordPress admin URL (`<site_url>/wp-admin`), the admin username, and the admin password
+- SMTP credentials (host, port, username, password) from env vars; never hardcoded
+- Raises `EmailDeliveryError` on SMTP failure — the orchestrator logs this but marks the job complete anyway (the site is live; email is best-effort at this stage)
+- Email content is a plain-text template; no HTML required for v1
+
+**Depends on:** F038 (orchestrator calls this as Step 8 after SSL is confirmed active)
+
+**Tests:** mock SMTP; cover successful send, SMTP failure (raises `EmailDeliveryError`), email contains correct URLs and credentials
 
 ---
 
