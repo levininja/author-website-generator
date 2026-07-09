@@ -8,9 +8,11 @@ Related documents: [Product spec](SPEC.md) · [Feature list](FEATURES.md) · [Pr
 
 **1. Install dependencies**
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 npm install
 ```
+
+`requirements-dev.txt` includes everything in `requirements.txt` plus dev tools (pytest, Ruff). Use `requirements.txt` alone for production deployments.
 
 **2. Configure environment**
 ```bash
