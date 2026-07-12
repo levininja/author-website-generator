@@ -46,20 +46,6 @@ shopping carts, or payment processing.
 ---
 
 
-### T003 — Break the onboarding React app into separate files
-
-**Type:** Task
-**As** a developer, I want `frontend/onboarding/App.jsx` divided into smaller,
-focused files so that the onboarding frontend is easier to understand and
-maintain.
-
-The single 1,800+ line `App.jsx` file makes it hard to reason about individual
-steps and means agents editing the frontend will frequently step on each other.
-Decompose into per-step and per-concern component files before the next round
-of frontend feature work (F028+).
-
----
-
 ### T004 — Harden the subprocess runner with stderr capture, timeouts, and logging
 
 **Type:** Task
@@ -793,3 +779,19 @@ tables. Book records and uploaded files remain F002.
 - A multi-template visual picker with OPST previews is out of scope for v1 — see F031 in the backlog
 
 **Dev note:** A plain dropdown with 6 hardcoded template options (defined as `DIVI_TEMPLATES` in `onboarding/views.py`) already exists in `onboarding/templates/onboarding/onboard.html`. Replace it with a single hardcoded "Classic" option under the "Website Templates" label plus the one-line coming-soon copy; no picker UI or preview needed.
+
+---
+
+### T003 — Break the onboarding React app into separate files
+
+**Type:** Task
+**As** a developer, I want `frontend/onboarding/App.jsx` divided into smaller,
+focused files so that the onboarding frontend is easier to understand and
+maintain.
+
+The single 1,800+ line `App.jsx` file makes it hard to reason about individual
+steps and means agents editing the frontend will frequently step on each other.
+Decompose into per-step and per-concern component files before the next round
+of frontend feature work (F028+).
+
+---
