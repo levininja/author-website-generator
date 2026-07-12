@@ -92,6 +92,22 @@ Django provides a long-term-supported backend foundation, while React is
 appropriate for the wizard and generation-result experience. React-based
 generated-site preview remains undecided.
 
+Onboarding and generation are separate React apps mounted into Django-rendered
+pages. AWG still has one canonical website and one Python/Django server at
+runtime; the React apps are not separate deployed websites or backend services.
+
+Local development may run each React app through its own Vite dev server for
+hot module reloading, such as one port for onboarding and one port for
+generation. These Vite servers are developer tooling only. The Django-mounted
+pages remain the integration source of truth for production bundle loading,
+CSRF, cookies, media URLs, and API behavior.
+
+The generation app should support direct development against a saved Website
+brief by accepting a brief identifier in the URL and loading the real persisted
+data through Django APIs. This lets developers work on generation without
+repeating the onboarding survey while keeping the generation flow grounded in
+real AWG data.
+
 Onboarding uses a wizard that asks one question at a time and retains answers
 when the user navigates backward. Completing the survey atomically persists the
 validated author and books before showing a read-only review. The review reloads

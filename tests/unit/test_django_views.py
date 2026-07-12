@@ -101,6 +101,27 @@ def test_root_redirects_to_onboard(client):
 
 
 @pytest.mark.django_db
+def test_generation_page_mounts_generation_react_app_for_existing_website_brief(client):
+    created = post_onboarding(client)
+    author_id = created.json()["author_id"]
+
+    response = client.get(f"/website-briefs/{author_id}/generate")
+
+    assert response.status_code == 200
+    assert f'data-brief-id="{author_id}"'.encode() in response.content
+    assert b'id="generation-root"' in response.content
+    assert b"/static/generation/dist/generation.js" in response.content
+
+
+def test_generation_page_returns_404_for_missing_website_brief(client):
+    response = client.get(
+        "/website-briefs/00000000-0000-0000-0000-000000000000/generate"
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
 def test_submission_accepts_valid_multipart_data_and_persists_it(client):
     response = post_onboarding(client)
 

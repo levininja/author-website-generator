@@ -49,6 +49,33 @@ python manage.py runserver
 
 The app runs on `http://localhost:8000` by default. Navigate to `/onboard` to open the form. No login is required.
 
+For React hot module reloading during frontend work, keep Django running as the
+API server and start the relevant Vite dev server in another terminal:
+
+```bash
+npm run dev:onboarding    # http://127.0.0.1:3000
+npm run dev:generation    # http://127.0.0.1:3001
+```
+
+The Vite dev servers proxy API requests to Django at `http://127.0.0.1:8000`,
+so Django must be running first. The generation app loads a saved Website brief
+by URL query parameter:
+
+```text
+http://127.0.0.1:3001/?brief=<website_brief_id>
+```
+
+Use the Django-mounted generation page as the integration check for production
+bundle loading, CSRF, cookies, media URLs, and template bootstrapping:
+
+```text
+http://localhost:8000/website-briefs/<website_brief_id>/generate
+```
+
+Create a Website brief by completing `/onboard` once. The saved brief ID is the
+`author_id` returned by the onboarding submission and used in the generated
+author resource URLs.
+
 ### Genre catalog
 
 `onboarding/static/genres.json` is the source used by the genre-catalog data
@@ -130,6 +157,7 @@ onboarding/             Public onboarding app
   migrations/           Submission and book persistence schema
   templates/onboarding/ Django-namespaced HTML templates
   static/onboarding/    Django-namespaced SCSS, generated CSS, and JS
+  static/generation/    Generated generation-app bundle served by Django
 config/
   config.example.yaml   Tracked server-inventory template
   config.yaml           Local server inventory (ignored by Git)
@@ -138,6 +166,7 @@ models/
   config_models.py      Pydantic models: WebsiteServer, AppConfig, ServerType
   onboarding.py         Pydantic onboarding and social-link models
 frontend/onboarding/    React onboarding wizard source and component tests
+frontend/generation/    React generation app source and component tests
 tests/
   conftest.py           Shared pytest fixtures
   unit/                 Unit tests

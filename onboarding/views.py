@@ -19,6 +19,7 @@ from onboarding.services import (
     persist_onboarding,
     serialize_author,
     serialize_book,
+    serialize_website_brief,
 )
 
 IMAGE_LIMIT = 10 * 1024 * 1024
@@ -313,6 +314,47 @@ def author_books(request: HttpRequest, author_id: UUID) -> JsonResponse:
         )
     )
     return JsonResponse([serialize_book(book) for book in books], safe=False)
+
+
+def _get_author_for_website_brief(author_id: UUID) -> Author | None:
+    return (
+        Author.objects.prefetch_related(
+            "authorcategory_set__category",
+            "authorgenre_set__genre",
+            "authorsubgenre_set__subgenre",
+        )
+        .filter(pk=author_id)
+        .first()
+    )
+
+
+def _books_for_website_brief(author: Author) -> list[Book]:
+    return list(
+        Book.objects.filter(author=author)
+        .select_related("genre__category", "subgenre", "series")
+        .prefetch_related("reviews", "awards")
+    )
+
+
+@require_GET
+def website_brief_detail(request: HttpRequest, author_id: UUID) -> JsonResponse:
+    """Return the saved Website brief used as generation input."""
+    author = _get_author_for_website_brief(author_id)
+    if author is None:
+        return JsonResponse({"message": "Website brief not found."}, status=404)
+    return JsonResponse(serialize_website_brief(author, _books_for_website_brief(author)))
+
+
+@require_GET
+def generate_website_brief(request: HttpRequest, author_id: UUID) -> HttpResponse:
+    """Render the generation app for one saved Website brief."""
+    if not Author.objects.filter(pk=author_id).exists():
+        raise Http404
+    return render(
+        request,
+        "onboarding/generate.html",
+        {"website_brief_id": str(author_id)},
+    )
 
 
 @require_GET

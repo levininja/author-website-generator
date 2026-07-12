@@ -109,6 +109,28 @@ def test_onboarding_creates_author_and_books_then_resources_read_separately(clie
     assert books_response.json()[0]["number_in_series"] == 2
 
 
+def test_website_brief_returns_complete_generation_input(client):
+    created = create_onboarding(client)
+    author_id = created.json()["author_id"]
+
+    response = client.get(f"/website-briefs/{author_id}")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == author_id
+    assert response.json()["author"]["id"] == author_id
+    assert response.json()["author"]["name"] == "Jane Doe"
+    assert response.json()["books"][0]["title"] == "The Midnight Code"
+    assert response.json()["books"][0]["category"]["name"] == "Fiction"
+    assert response.json()["generation"]["status"] == "ready"
+
+
+def test_website_brief_returns_404_for_unknown_author(client):
+    response = client.get("/website-briefs/00000000-0000-0000-0000-000000000000")
+
+    assert response.status_code == 404
+    assert response.json() == {"message": "Website brief not found."}
+
+
 def test_book_resource_and_generation_use_book_and_author_ids(client):
     created = create_onboarding(client)
     author_id = created.json()["author_id"]

@@ -453,3 +453,15 @@ def serialize_book(book: Book) -> dict[str, object]:
         ),
         "sample_chapter_name": book.sample_chapter_name,
     }
+
+
+def serialize_website_brief(author: Author, books: list[Book]) -> dict[str, object]:
+    """Serialize the saved onboarding bundle used as generation input."""
+    return {
+        "id": str(author.pk),
+        "author": serialize_author(author),
+        "books": [serialize_book(book) for book in books],
+        "generation": {
+            "status": "ready",
+        },
+    }
