@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 function csrfHeaders(json = false) {
@@ -31,7 +31,13 @@ export default function App() {
     type: briefId ? "loading" : "error",
     message: briefId ? "Loading Website brief..." : "Missing Website brief ID.",
   });
-  const [generateState, setGenerateState] = useState({ type: "", message: "" });
+  const [generateState, setGenerateState] = useState({
+    type: "idle",
+    jobId: null,
+    message: "",
+    previewUrl: null,
+  });
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
     if (!briefId) return undefined;
@@ -66,12 +72,71 @@ export default function App() {
     };
   }, [briefId]);
 
+  // Poll /generate/<jobId>/status every 3 seconds while the job is active.
+  useEffect(() => {
+    if (generateState.type !== "polling" || !generateState.jobId) return undefined;
+
+    const jobId = generateState.jobId;
+    let active = true;
+
+    async function pollStatus() {
+      if (!active) return;
+      try {
+        const response = await fetch(`/generate/${jobId}/status`);
+        const data = await response.json();
+        if (!active) return;
+        if (!response.ok) {
+          clearInterval(pollIntervalRef.current);
+          setGenerateState({
+            type: "failed",
+            jobId: null,
+            message: data.message || "Generation failed.",
+            previewUrl: null,
+          });
+          return;
+        }
+        if (data.status === "complete") {
+          clearInterval(pollIntervalRef.current);
+          setGenerateState({
+            type: "complete",
+            jobId: null,
+            message: "Your website has been generated successfully!",
+            previewUrl: data.preview_url,
+          });
+        } else if (data.status === "failed") {
+          clearInterval(pollIntervalRef.current);
+          setGenerateState({
+            type: "failed",
+            jobId: null,
+            message: data.error_message || "Generation failed.",
+            previewUrl: null,
+          });
+        }
+        // pending/running: keep polling
+      } catch {
+        if (!active) return;
+        clearInterval(pollIntervalRef.current);
+        setGenerateState({
+          type: "failed",
+          jobId: null,
+          message: "We could not reach the server. Check Django and try again.",
+          previewUrl: null,
+        });
+      }
+    }
+
+    pollIntervalRef.current = setInterval(pollStatus, 3000);
+
+    return () => {
+      active = false;
+      clearInterval(pollIntervalRef.current);
+    };
+  }, [generateState.type, generateState.jobId]);
+
   async function generateSite() {
-    if (!brief || generateState.type === "loading") return;
-    setGenerateState({
-      type: "loading",
-      message: "Calling the generation endpoint...",
-    });
+    const isActive = generateState.type === "starting" || generateState.type === "polling";
+    if (!brief || isActive) return;
+    setGenerateState({ type: "starting", jobId: null, message: "Starting generation...", previewUrl: null });
     try {
       const response = await fetch("/generate", {
         method: "POST",
@@ -81,19 +146,25 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) {
         setGenerateState({
-          type: "error",
+          type: "failed",
+          jobId: null,
           message: data.message || "We could not start generation.",
+          previewUrl: null,
         });
         return;
       }
       setGenerateState({
-        type: "success",
-        message: "The generation endpoint was called successfully.",
+        type: "polling",
+        jobId: data.job_id,
+        message: "Generating your website...",
+        previewUrl: null,
       });
     } catch {
       setGenerateState({
-        type: "error",
+        type: "failed",
+        jobId: null,
         message: "We could not reach the server. Check Django and try again.",
+        previewUrl: null,
       });
     }
   }
@@ -113,6 +184,8 @@ export default function App() {
       </main>
     );
   }
+
+  const isGenerating = generateState.type === "starting" || generateState.type === "polling";
 
   return (
     <main className="onboarding-shell">
@@ -137,7 +210,7 @@ export default function App() {
             type="button"
             className="button-primary"
             data-testid="generate-site"
-            disabled={generateState.type === "loading"}
+            disabled={isGenerating}
             onClick={generateSite}
           >
             Generate site

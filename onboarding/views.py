@@ -1,4 +1,5 @@
 import json
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from uuid import UUID
@@ -400,7 +401,10 @@ def download_sample_chapter(request: HttpRequest, book_id: UUID) -> FileResponse
 
 @require_POST
 def generate(request: HttpRequest) -> JsonResponse:
-    """Validate a saved author before starting the generation flow."""
+    """Create a background generation job for a saved author and return the job ID immediately."""
+    from generation.jobs import run_generation_job
+    from onboarding.models import GenerationJob
+
     try:
         payload = json.loads(request.body)
     except (json.JSONDecodeError, UnicodeDecodeError):
@@ -414,9 +418,50 @@ def generate(request: HttpRequest) -> JsonResponse:
     if author is None:
         return JsonResponse({"message": "Author not found."}, status=404)
 
-    return JsonResponse(
-        {
-            "status": "ok",
-            "author_id": str(author.pk),
-        }
-    )
+    active_job = GenerationJob.objects.filter(
+        author=author,
+        status__in=[GenerationJob.STATUS_PENDING, GenerationJob.STATUS_RUNNING],
+    ).first()
+    if active_job:
+        return JsonResponse(
+            {"message": "A generation job is already in progress for this author."},
+            status=409,
+        )
+
+    job = GenerationJob.objects.create(author=author)
+
+    def _run_job() -> None:
+        from django.db import connection
+        try:
+            run_generation_job(job.pk, author.pk)
+        finally:
+            connection.close()
+
+    thread = threading.Thread(target=_run_job, daemon=True)
+    thread.start()
+
+    return JsonResponse({"job_id": str(job.pk)}, status=202)
+
+
+@require_GET
+def generation_job_status(request: HttpRequest, job_id: UUID) -> JsonResponse:
+    """Return the current status of a generation job."""
+    from onboarding.models import GenerationJob
+
+    job = GenerationJob.objects.filter(pk=job_id).first()
+    if job is None:
+        return JsonResponse({"message": "Job not found."}, status=404)
+
+    if job.status == GenerationJob.STATUS_COMPLETE:
+        return JsonResponse({
+            "status": job.status,
+            "preview_url": None,  # placeholder until F020 provides the real URL
+        })
+
+    if job.status == GenerationJob.STATUS_FAILED:
+        return JsonResponse({
+            "status": job.status,
+            "error_message": job.error_message or "",
+        })
+
+    return JsonResponse({"status": job.status})

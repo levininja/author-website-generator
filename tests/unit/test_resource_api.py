@@ -137,16 +137,17 @@ def test_book_resource_and_generation_use_book_and_author_ids(client):
     book = Book.objects.get()
 
     book_response = client.get(f"/books/{book.pk}")
-    generated = client.post(
-        "/generate",
-        data=json.dumps({"author_id": author_id}),
-        content_type="application/json",
-    )
+    with patch("onboarding.views.threading.Thread"):
+        generated = client.post(
+            "/generate",
+            data=json.dumps({"author_id": author_id}),
+            content_type="application/json",
+        )
 
     assert book_response.status_code == 200
     assert book_response.json()["id"] == str(book.pk)
-    assert generated.status_code == 200
-    assert generated.json() == {"status": "ok", "author_id": author_id}
+    assert generated.status_code == 202
+    assert "job_id" in generated.json()
 
 
 def test_obsolete_submission_endpoints_are_not_available(client):
