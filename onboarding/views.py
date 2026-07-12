@@ -455,7 +455,7 @@ def generation_job_status(request: HttpRequest, job_id: UUID) -> JsonResponse:
     if job.status == GenerationJob.STATUS_COMPLETE:
         return JsonResponse({
             "status": job.status,
-            "preview_url": None,  # placeholder until F020 provides the real URL
+            "preview_url": job.preview_url,
         })
 
     if job.status == GenerationJob.STATUS_FAILED:

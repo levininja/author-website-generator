@@ -183,7 +183,7 @@ def test_get_job_status_returns_running_for_running_job(client, author):
     assert response.json()["status"] == "running"
 
 
-def test_get_job_status_includes_null_preview_url_on_complete(client, author):
+def test_get_job_status_includes_null_preview_url_on_complete_when_not_set(client, author):
     from onboarding.models import GenerationJob
     job = GenerationJob.objects.create(author=author, status=GenerationJob.STATUS_COMPLETE)
 
@@ -194,6 +194,20 @@ def test_get_job_status_includes_null_preview_url_on_complete(client, author):
     assert data["status"] == "complete"
     assert "preview_url" in data
     assert data["preview_url"] is None
+
+
+def test_get_job_status_returns_preview_url_from_job_record(client, author):
+    from onboarding.models import GenerationJob
+    job = GenerationJob.objects.create(
+        author=author,
+        status=GenerationJob.STATUS_COMPLETE,
+        preview_url="http://localhost:8080",
+    )
+
+    response = client.get(f"/generate/{job.pk}/status")
+
+    assert response.status_code == 200
+    assert response.json()["preview_url"] == "http://localhost:8080"
 
 
 def test_get_job_status_includes_error_message_on_failed(client, author):
