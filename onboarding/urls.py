@@ -18,4 +18,5 @@ urlpatterns = [
         name="sample-chapter-download",
     ),
     path("generate", views.generate),
+    path("generate/<uuid:job_id>/status", views.generation_job_status),
 ]

@@ -620,23 +620,21 @@ def test_author_readback_returns_404_for_unknown_id(client):
     assert response.status_code == 404
 
 
-def test_generate_is_a_no_op_for_an_existing_author(client):
+def test_generate_creates_job_and_returns_job_id_for_existing_author(client):
     created = post_onboarding(client)
     author_id = created.json()["author_id"]
-    before = Author.objects.count()
 
-    response = client.post(
-        "/generate",
-        data=json.dumps({"author_id": author_id}),
-        content_type="application/json",
-    )
+    with patch("onboarding.views.threading.Thread"):
+        response = client.post(
+            "/generate",
+            data=json.dumps({"author_id": author_id}),
+            content_type="application/json",
+        )
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "status": "ok",
-        "author_id": author_id,
-    }
-    assert Author.objects.count() == before
+    assert response.status_code == 202
+    data = response.json()
+    assert "job_id" in data
+    assert "author_id" not in data
 
 
 @pytest.mark.parametrize(

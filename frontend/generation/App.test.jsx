@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +6,7 @@ import App, { resolveWebsiteBriefId } from "./App";
 
 
 const BRIEF_ID = "11111111-1111-4111-8111-111111111111";
+const JOB_ID = "33333333-3333-4333-8333-333333333333";
 
 const WEBSITE_BRIEF = {
   id: BRIEF_ID,
@@ -42,6 +43,7 @@ function setLocation(path) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
   document.body.innerHTML = "";
   setLocation("/");
 });
@@ -103,20 +105,19 @@ describe("Generation App", () => {
     expect(await screen.findByText("Website brief not found.")).toBeVisible();
   });
 
-  it("calls the generation endpoint for the loaded website brief", async () => {
+  it("posts to the generation endpoint with the correct author ID on generate", async () => {
     const user = userEvent.setup();
     setLocation(`/?brief=${BRIEF_ID}`);
     const fetchMock = vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
-      .mockResolvedValueOnce(jsonResponse({ status: "ok", author_id: BRIEF_ID }));
+      .mockResolvedValue(jsonResponse({ job_id: JOB_ID }));
 
     render(<App />);
-
     await screen.findByRole("heading", { name: /generate jane doe's website/i });
     await user.click(screen.getByRole("button", { name: /generate site/i }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenLastCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         "/generate",
         expect.objectContaining({
           method: "POST",
@@ -124,6 +125,104 @@ describe("Generation App", () => {
         }),
       );
     });
-    expect(screen.getByText(/generation endpoint was called successfully/i)).toBeVisible();
+  });
+
+  it("shows generating message while polling after a successful POST", async () => {
+    const user = userEvent.setup();
+    setLocation(`/?brief=${BRIEF_ID}`);
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
+      .mockResolvedValue(jsonResponse({ job_id: JOB_ID }));
+
+    render(<App />);
+    await screen.findByRole("heading", { name: /generate jane doe's website/i });
+    await user.click(screen.getByRole("button", { name: /generate site/i }));
+
+    expect(await screen.findByText(/generating your website/i)).toBeVisible();
+  });
+
+  it("shows success message when job status is complete", async () => {
+    vi.useFakeTimers();
+    setLocation(`/?brief=${BRIEF_ID}`);
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
+      .mockResolvedValueOnce(jsonResponse({ job_id: JOB_ID }))
+      .mockResolvedValue(jsonResponse({ status: "complete", preview_url: null }));
+
+    render(<App />);
+
+    // Flush the brief fetch + React state update
+    await act(() => vi.runAllTimersAsync());
+    expect(screen.getByRole("heading", { name: /generate jane doe's website/i })).toBeVisible();
+
+    // Click generate, flush the POST fetch + React state update
+    await act(async () => {
+      screen.getByRole("button", { name: /generate site/i }).click();
+      await vi.runAllTimersAsync();
+    });
+
+    // Advance past the 3-second poll interval; flush the status fetch + React state update
+    await act(() => vi.advanceTimersByTimeAsync(3100));
+
+    expect(screen.getByText(/generated successfully/i)).toBeVisible();
+  });
+
+  it("shows error message when job status is failed", async () => {
+    vi.useFakeTimers();
+    setLocation(`/?brief=${BRIEF_ID}`);
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
+      .mockResolvedValueOnce(jsonResponse({ job_id: JOB_ID }))
+      .mockResolvedValue(
+        jsonResponse({ status: "failed", error_message: "WP-CLI not found." }),
+      );
+
+    render(<App />);
+    await act(() => vi.runAllTimersAsync());
+    expect(screen.getByRole("heading", { name: /generate jane doe's website/i })).toBeVisible();
+
+    await act(async () => {
+      screen.getByRole("button", { name: /generate site/i }).click();
+      await vi.runAllTimersAsync();
+    });
+
+    await act(() => vi.advanceTimersByTimeAsync(3100));
+
+    expect(screen.getByText("WP-CLI not found.")).toBeVisible();
+  });
+
+  it("disables the generate button while generating", async () => {
+    const user = userEvent.setup();
+    setLocation(`/?brief=${BRIEF_ID}`);
+    // Status endpoint returns pending indefinitely to keep the button disabled
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
+      .mockResolvedValueOnce(jsonResponse({ job_id: JOB_ID }))
+      .mockResolvedValue(jsonResponse({ status: "pending" }));
+
+    render(<App />);
+    await screen.findByRole("heading", { name: /generate jane doe's website/i });
+    await user.click(screen.getByRole("button", { name: /generate site/i }));
+
+    await screen.findByText(/generating your website/i);
+    expect(screen.getByRole("button", { name: /generate site/i })).toBeDisabled();
+  });
+
+  it("shows an error when the generation endpoint fails", async () => {
+    const user = userEvent.setup();
+    setLocation(`/?brief=${BRIEF_ID}`);
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(WEBSITE_BRIEF))
+      .mockResolvedValueOnce(
+        jsonResponse({ message: "A generation job is already in progress." }, false),
+      );
+
+    render(<App />);
+    await screen.findByRole("heading", { name: /generate jane doe's website/i });
+    await user.click(screen.getByRole("button", { name: /generate site/i }));
+
+    expect(
+      await screen.findByText(/a generation job is already in progress/i),
+    ).toBeVisible();
   });
 });
