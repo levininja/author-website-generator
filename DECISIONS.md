@@ -79,6 +79,24 @@ The marketing site uses testimonials and links to live examples to establish tru
 
 ---
 
+## F030 uses naive threading for background generation jobs
+
+Website generation runs in a Python `threading.Thread` spawned by the view. The view returns a `job_id` immediately; the thread runs the full generation pipeline and writes job state (`pending → running → complete/failed`) directly to a `GenerationJob` DB row. The status endpoint reads that row.
+
+No third-party job queue library is used in v1. Rationale:
+
+1. Milestone 1 generates one site at a time by design — a true queue adds no value yet.
+2. Zero extra infrastructure: no Redis, no separate worker process to start.
+3. Migration cost to Celery later is the same from naive threading as from Django-Q2: the dispatch call changes, the `GenerationJob` model and pipeline code do not.
+
+Two invariants must be maintained to keep this safe:
+- **One active job at a time:** `POST /generate` must check for an existing `pending` or `running` job before spawning a new thread and reject duplicates.
+- **Startup cleanup:** On app startup (`AppConfig.ready()`), any job stuck in `running` state is reset to `failed` with an error message indicating the server restarted mid-generation.
+
+When concurrency or reliability requirements grow beyond what threading handles, migrate to Celery + Redis and keep the `GenerationJob` model and pipeline code unchanged.
+
+---
+
 ## AWG uses Django and React
 
 AWG uses Python/Django 5.2 LTS for backend validation, persistence,
