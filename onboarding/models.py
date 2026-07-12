@@ -369,6 +369,7 @@ class GenerationJob(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     error_message = models.TextField(null=True, blank=True)
+    preview_url = models.URLField(max_length=2048, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)

@@ -49,6 +49,21 @@ python manage.py runserver
 
 The app runs on `http://localhost:8000` by default. Navigate to `/onboard` to open the form. No login is required.
 
+**6. (Optional) Start the background worker**
+
+The generation pipeline runs in a background thread spawned by Django, so no separate worker process is needed for local development.
+
+**7. (Optional) Preview a generated site**
+
+After submitting the onboarding form and triggering generation, the generated WordPress site is automatically served on a local PHP server. You can also start it manually:
+
+```bash
+# Serve the hosted site on http://localhost:8080
+php -S localhost:8080 -t hosted-site/
+```
+
+The generation pipeline starts and manages this server automatically. The `hosted-site/` directory is created and updated each time a site is generated. Keep this command running in a separate terminal to browse the live preview at `http://localhost:8080`.
+
 For React hot module reloading during frontend work, keep Django running as the
 API server and start the relevant Vite dev server in another terminal:
 

@@ -146,10 +146,14 @@ def test_run_generation_job_transitions_pending_to_running_then_complete(author,
 
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress"),
         patch("generation.jobs.configure_wordpress"),
+        patch("generation.jobs.setup_divi"),
         patch("generation.jobs.write_books_cpt"),
         patch("generation.jobs.generate_pages"),
+        patch("generation.jobs.setup_header_footer"),
+        patch("generation.jobs.host_site"),
     ):
         run_generation_job(job.pk, author.pk)
 
@@ -158,6 +162,28 @@ def test_run_generation_job_transitions_pending_to_running_then_complete(author,
     assert job.started_at is not None
     assert job.completed_at is not None
     assert job.error_message is None
+
+
+def test_run_generation_job_sets_preview_url_on_complete(author, tmp_path):
+    from generation.jobs import run_generation_job
+    from onboarding.models import GenerationJob
+    job = GenerationJob.objects.create(author=author)
+
+    with (
+        patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
+        patch("generation.jobs.install_wordpress"),
+        patch("generation.jobs.configure_wordpress"),
+        patch("generation.jobs.setup_divi"),
+        patch("generation.jobs.write_books_cpt"),
+        patch("generation.jobs.generate_pages"),
+        patch("generation.jobs.setup_header_footer"),
+        patch("generation.jobs.host_site"),
+    ):
+        run_generation_job(job.pk, author.pk)
+
+    job.refresh_from_db()
+    assert job.preview_url == "http://localhost:8080"
 
 
 def test_run_generation_job_calls_pipeline_functions_in_order(author, tmp_path):
@@ -171,14 +197,18 @@ def test_run_generation_job_calls_pipeline_functions_in_order(author, tmp_path):
 
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress", side_effect=_record("install")),
         patch("generation.jobs.configure_wordpress", side_effect=_record("configure")),
+        patch("generation.jobs.setup_divi", side_effect=_record("divi")),
         patch("generation.jobs.write_books_cpt", side_effect=_record("books_cpt")),
         patch("generation.jobs.generate_pages", side_effect=_record("pages")),
+        patch("generation.jobs.setup_header_footer", side_effect=_record("header_footer")),
+        patch("generation.jobs.host_site", side_effect=_record("host")),
     ):
         run_generation_job(job.pk, author.pk)
 
-    assert order == ["install", "configure", "books_cpt", "pages"]
+    assert order == ["install", "configure", "divi", "books_cpt", "pages", "header_footer", "host"]
 
 
 def test_run_generation_job_uses_author_name_as_site_title(author, tmp_path):
@@ -188,10 +218,14 @@ def test_run_generation_job_uses_author_name_as_site_title(author, tmp_path):
 
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress") as mock_install,
         patch("generation.jobs.configure_wordpress"),
+        patch("generation.jobs.setup_divi"),
         patch("generation.jobs.write_books_cpt"),
         patch("generation.jobs.generate_pages"),
+        patch("generation.jobs.setup_header_footer"),
+        patch("generation.jobs.host_site"),
     ):
         run_generation_job(job.pk, author.pk)
 
@@ -225,18 +259,20 @@ def test_run_generation_job_cleans_up_site_files_on_failure(author, tmp_path):
     from onboarding.models import GenerationJob
     job = GenerationJob.objects.create(author=author)
 
-    # Pre-create partial site files to simulate install_wordpress partially completing
-    site_dir = tmp_path / str(author.pk)
-    site_dir.mkdir()
-    (site_dir / "partial_file.php").write_text("partial")
+    # Pre-create partial staging files to simulate install_wordpress partially completing.
+    # Staging path is get_site_path() / "staging-{job_id}".
+    staging_dir = tmp_path / f"staging-{job.pk}"
+    staging_dir.mkdir()
+    (staging_dir / "partial_file.php").write_text("partial")
 
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress", side_effect=RuntimeError("oops")),
     ):
         run_generation_job(job.pk, author.pk)
 
-    assert not site_dir.exists()
+    assert not staging_dir.exists()
 
 
 def test_run_generation_job_does_not_raise_even_if_no_site_files_to_clean(author, tmp_path):
@@ -244,9 +280,10 @@ def test_run_generation_job_does_not_raise_even_if_no_site_files_to_clean(author
     from onboarding.models import GenerationJob
     job = GenerationJob.objects.create(author=author)
 
-    # No site directory exists — cleanup should handle this gracefully
+    # No staging directory exists — cleanup should handle this gracefully
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress", side_effect=RuntimeError("no files yet")),
     ):
         run_generation_job(job.pk, author.pk)
@@ -266,13 +303,21 @@ def test_run_generation_job_accepts_runner_and_capture_runner_for_testability(au
 
     with (
         patch("generation.jobs.get_site_path", return_value=str(tmp_path)),
+        patch("generation.jobs.get_hosted_site_path", return_value=str(tmp_path / "hosted")),
         patch("generation.jobs.install_wordpress") as mock_install,
         patch("generation.jobs.configure_wordpress"),
+        patch("generation.jobs.setup_divi") as mock_divi,
         patch("generation.jobs.write_books_cpt"),
         patch("generation.jobs.generate_pages") as mock_pages,
+        patch("generation.jobs.setup_header_footer") as mock_header_footer,
+        patch("generation.jobs.host_site"),
     ):
         run_generation_job(job.pk, author.pk, runner=runner, capture_runner=capture_runner)
 
     assert mock_install.call_args.kwargs.get("runner") is runner
+    assert mock_divi.call_args.kwargs.get("runner") is runner
+    assert mock_divi.call_args.kwargs.get("capture_runner") is capture_runner
     assert mock_pages.call_args.kwargs.get("runner") is runner
     assert mock_pages.call_args.kwargs.get("capture_runner") is capture_runner
+    assert mock_header_footer.call_args.kwargs.get("runner") is runner
+    assert mock_header_footer.call_args.kwargs.get("capture_runner") is capture_runner
